@@ -48,4 +48,28 @@ enum QuestionType: string
             default => 0,
         };
     }
+
+    /**
+     * 获取题型对应的最少正确答案数量
+     */
+    public function getMinCorrectOptionCount(): int
+    {
+        return match ($this) {
+            // 题型为【单选题】时，只能选择一个选项为正确答案
+            // 题型为【多选题】时，至少要选择两个及以上选项为正确答案
+            self::MULTIPLE_CHOICE => 2,
+            default => 1,
+        };
+    }
+
+    /**
+     * 转换为数组格式（兼容 exam-bundle）
+     */
+    public function toArray(): array
+    {
+        return [
+            'value' => $this->value,
+            'label' => $this->getLabel(),
+        ];
+    }
 }

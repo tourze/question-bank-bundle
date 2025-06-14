@@ -332,4 +332,51 @@ class Question implements \Stringable
     {
         return $this->status->isUsable();
     }
+
+    /**
+     * 兼容 exam-bundle 的 API 数组方法 - 完整信息（包含正确答案）
+     */
+    public function retrieveApiArray(): array
+    {
+        $options = [];
+        $letterMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        $correctLetters = [];
+        
+        foreach ($this->getOptions() as $i => $option) {
+            $letter = $letterMap[$i] ?? chr(65 + $i);
+            $options[] = [
+                ...$option->retrieveApiArray(),
+                'letter' => $letter,
+            ];
+            if ($option->isCorrect()) {
+                $correctLetters[] = $letter;
+            }
+        }
+
+        return [
+            'id' => $this->getId()->toRfc4122(),
+            'title' => $this->getTitle(),
+            'content' => $this->getContent(),
+            'type' => $this->getType()->toArray(),
+            'analyse' => $this->getExplanation(),
+            'correctLetters' => $correctLetters,
+            'options' => $options,
+        ];
+    }
+
+    /**
+     * 兼容 exam-bundle 的隐藏答案 API 数组方法
+     */
+    public function retrieveSecretArray(): array
+    {
+        $result = $this->retrieveApiArray();
+        unset($result['analyse']);
+        unset($result['correctLetters']);
+        foreach ($result['options'] as $i => $option) {
+            unset($option['correct']);
+            $result['options'][$i] = $option;
+        }
+
+        return $result;
+    }
 }

@@ -132,4 +132,17 @@ class Option implements \Stringable
     {
         return $this->content;
     }
+
+    /**
+     * 兼容 exam-bundle 的 API 数组方法
+     */
+    public function retrieveApiArray(): array
+    {
+        return [
+            'id' => $this->getId()->toRfc4122(),
+            'content' => $this->getContent(),
+            'image' => null, // question-bank-bundle 暂不支持图片，可扩展
+            'correct' => $this->isCorrect(),
+        ];
+    }
 }
