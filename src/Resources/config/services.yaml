@@ -1,0 +1,32 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Tourze\QuestionBankBundle\:
+        resource: '../../*'
+        exclude: '../../{DependencyInjection,Entity,Tests,DTO,ValueObject,Enum,Event,Exception}'
+
+    # 仓储接口绑定
+    Tourze\QuestionBankBundle\Repository\QuestionRepositoryInterface:
+        alias: Tourze\QuestionBankBundle\Repository\QuestionRepository
+
+    # 服务接口绑定
+    Tourze\QuestionBankBundle\Service\QuestionServiceInterface:
+        alias: Tourze\QuestionBankBundle\Service\QuestionService
+
+    Tourze\QuestionBankBundle\Service\CategoryServiceInterface:
+        alias: Tourze\QuestionBankBundle\Service\CategoryService
+
+    Tourze\QuestionBankBundle\Service\TagServiceInterface:
+        alias: Tourze\QuestionBankBundle\Service\TagService
+
+    # 测试环境中公开服务
+    Tourze\QuestionBankBundle\Service\QuestionService:
+        public: true
+
+    Tourze\QuestionBankBundle\Service\CategoryService:
+        public: true
+
+    Tourze\QuestionBankBundle\Service\TagService:
+        public: true

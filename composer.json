@@ -1,0 +1,40 @@
+{
+  "name": "tourze/question-bank-bundle",
+  "description": "题库模块",
+  "license": "MIT",
+  "require": {
+    "php": "^8.1",
+    "doctrine/collections": "^2.3",
+    "doctrine/dbal": "^4.0",
+    "doctrine/doctrine-bundle": "^2.13",
+    "doctrine/orm": "^3.0",
+    "doctrine/persistence": "^3.1 || ^4",
+    "symfony/config": "^6.4",
+    "symfony/dependency-injection": "^6.4",
+    "symfony/doctrine-bridge": "^6.4",
+    "symfony/event-dispatcher": "^6.4",
+    "symfony/event-dispatcher-contracts": "^2.5 | ^3",
+    "symfony/framework-bundle": "^6.4",
+    "symfony/http-kernel": "^6.4",
+    "symfony/uid": "^6.4",
+    "symfony/validator": "^6.4",
+    "symfony/yaml": "^6.4 || ^7.1",
+    "tourze/doctrine-timestamp-bundle": "0.0.*",
+    "tourze/symfony-integration-test-kernel": "0.0.*"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^10.0",
+    "symfony/phpunit-bridge": "^6.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "Tourze\\QuestionBankBundle\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tourze\\QuestionBankBundle\\Tests\\": "tests/"
+    }
+  }
+}
