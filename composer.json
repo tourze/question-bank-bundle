@@ -20,7 +20,11 @@
     "symfony/uid": "^6.4",
     "symfony/validator": "^6.4",
     "symfony/yaml": "^6.4 || ^7.1",
+    "tourze/doctrine-indexed-bundle": "0.0.*",
+    "tourze/doctrine-ip-bundle": "0.0.*",
     "tourze/doctrine-timestamp-bundle": "0.0.*",
+    "tourze/doctrine-track-bundle": "0.1.*",
+    "tourze/doctrine-user-bundle": "0.0.*",
     "tourze/symfony-integration-test-kernel": "0.0.*"
   },
   "require-dev": {

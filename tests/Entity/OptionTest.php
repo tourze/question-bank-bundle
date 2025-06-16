@@ -39,7 +39,7 @@ class OptionTest extends TestCase
     {
         $option = new Option('Test Content');
         $originalUpdateTime = $option->getUpdateTime();
-        
+
         usleep(1000); // 确保时间差异
         $option->setContent('New Content');
 
@@ -50,7 +50,7 @@ class OptionTest extends TestCase
     public function test_setIsCorrect_updatesCorrectFlag(): void
     {
         $option = new Option('Test Content', false);
-        
+
         $option->setIsCorrect(true);
 
         $this->assertTrue($option->isCorrect());
@@ -59,7 +59,7 @@ class OptionTest extends TestCase
     public function test_setSortOrder_updatesSortOrder(): void
     {
         $option = new Option('Test Content');
-        
+
         $option->setSortOrder(10);
 
         $this->assertEquals(10, $option->getSortOrder());
@@ -68,7 +68,7 @@ class OptionTest extends TestCase
     public function test_setExplanation_updatesExplanation(): void
     {
         $option = new Option('Test Content');
-        
+
         $option->setExplanation('Test Explanation');
 
         $this->assertEquals('Test Explanation', $option->getExplanation());
@@ -78,7 +78,7 @@ class OptionTest extends TestCase
     {
         $option = new Option('Test Content');
         $option->setExplanation('Some explanation');
-        
+
         $option->setExplanation(null);
 
         $this->assertNull($option->getExplanation());
@@ -88,7 +88,7 @@ class OptionTest extends TestCase
     {
         $option = new Option('Test Content');
         $question = $this->createTestQuestion();
-        
+
         $option->setQuestion($question);
 
         $this->assertEquals($question, $option->getQuestion());

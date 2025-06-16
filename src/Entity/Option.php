@@ -8,38 +8,63 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
+use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
+use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
+use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
+use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
 use Tourze\QuestionBankBundle\Repository\OptionRepository;
 
 #[ORM\Entity(repositoryClass: OptionRepository::class)]
-#[ORM\Table(name: 'question_bank_options')]
+#[ORM\Table(name: 'question_bank_options', options: ['comment' => '题目选项表'])]
 #[ORM\Index(columns: ['sort_order'], name: 'idx_option_sort_order')]
 class Option implements \Stringable
 {
     use TimestampableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    #[ORM\Column(type: UuidType::NAME, unique: true, options: ['comment' => '选项ID'])]
     private Uuid $id;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[TrackColumn]
+    #[ORM\Column(type: Types::TEXT, options: ['comment' => '选项内容'])]
     private string $content;
 
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[TrackColumn]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否为正确答案'])]
     private bool $isCorrect;
 
-    #[ORM\Column(type: Types::INTEGER)]
+    #[IndexColumn]
+    #[ORM\Column(type: Types::INTEGER, options: ['comment' => '排序顺序'])]
     private int $sortOrder = 0;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '选项解释'])]
     private ?string $explanation = null;
 
-    #[ORM\ManyToOne(targetEntity: Question::class, inversedBy: 'options', fetch: 'EXTRA_LAZY')]
+    #[ORM\ManyToOne(targetEntity: Question::class, fetch: 'EXTRA_LAZY', inversedBy: 'options')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Question $question = null;
 
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
     private bool $valid = true;
+
+    #[CreatedByColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '创建者'])]
+    private ?string $createdBy = null;
+
+    #[UpdatedByColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '更新者'])]
+    private ?string $updatedBy = null;
+
+    #[CreateIpColumn]
+    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
+    private ?string $createdFromIp = null;
+
+    #[UpdateIpColumn]
+    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
+    private ?string $updatedFromIp = null;
 
     public function __construct(string $content, bool $isCorrect = false, int $sortOrder = 0)
     {
@@ -88,7 +113,6 @@ class Option implements \Stringable
     public function setSortOrder(int $sortOrder): self
     {
         $this->sortOrder = $sortOrder;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -100,7 +124,6 @@ class Option implements \Stringable
     public function setExplanation(?string $explanation): self
     {
         $this->explanation = $explanation;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -112,7 +135,6 @@ class Option implements \Stringable
     public function setQuestion(?Question $question): self
     {
         $this->question = $question;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -124,7 +146,50 @@ class Option implements \Stringable
     public function setValid(bool $valid): self
     {
         $this->valid = $valid;
-        $this->updateTime = new \DateTimeImmutable();
+        return $this;
+    }
+
+    public function getCreatedBy(): ?string
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?string $createdBy): self
+    {
+        $this->createdBy = $createdBy;
+        return $this;
+    }
+
+    public function getUpdatedBy(): ?string
+    {
+        return $this->updatedBy;
+    }
+
+    public function setUpdatedBy(?string $updatedBy): self
+    {
+        $this->updatedBy = $updatedBy;
+        return $this;
+    }
+
+    public function getCreatedFromIp(): ?string
+    {
+        return $this->createdFromIp;
+    }
+
+    public function setCreatedFromIp(?string $createdFromIp): self
+    {
+        $this->createdFromIp = $createdFromIp;
+        return $this;
+    }
+
+    public function getUpdatedFromIp(): ?string
+    {
+        return $this->updatedFromIp;
+    }
+
+    public function setUpdatedFromIp(?string $updatedFromIp): self
+    {
+        $this->updatedFromIp = $updatedFromIp;
         return $this;
     }
 
@@ -133,9 +198,6 @@ class Option implements \Stringable
         return $this->content;
     }
 
-    /**
-     * 兼容 exam-bundle 的 API 数组方法
-     */
     public function retrieveApiArray(): array
     {
         return [

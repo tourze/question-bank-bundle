@@ -38,7 +38,7 @@ class QuestionTest extends TestCase
     {
         $question = $this->createTestQuestion();
         $originalUpdateTime = $question->getUpdateTime();
-        
+
         usleep(1000); // 确保时间差异
         $question->setTitle('New Title');
 

@@ -45,7 +45,7 @@ class QuestionDTOTest extends TestCase
     public function test_propertyAssignment_worksCorrectly(): void
     {
         $dto = new QuestionDTO();
-        
+
         $dto->title = 'Updated Title';
         $dto->content = 'Updated Content';
         $dto->type = QuestionType::MULTIPLE_CHOICE;
@@ -70,15 +70,15 @@ class QuestionDTOTest extends TestCase
     public function test_options_canBeAddedAndAccessed(): void
     {
         $dto = new QuestionDTO();
-        
+
         $option1 = new OptionDTO();
         $option1->content = 'Option A';
         $option1->isCorrect = true;
-        
+
         $option2 = new OptionDTO();
         $option2->content = 'Option B';
         $option2->isCorrect = false;
-        
+
         $dto->options = [$option1, $option2];
 
         $this->assertCount(2, $dto->options);
@@ -91,40 +91,40 @@ class QuestionDTOTest extends TestCase
     public function test_categoryIds_canBeManipulated(): void
     {
         $dto = new QuestionDTO();
-        
+
         $dto->categoryIds[] = 'cat1';
         $dto->categoryIds[] = 'cat2';
         $dto->categoryIds[] = 'cat3';
 
         $this->assertEquals(['cat1', 'cat2', 'cat3'], $dto->categoryIds);
-        
+
         // Remove one category
         unset($dto->categoryIds[1]);
         $dto->categoryIds = array_values($dto->categoryIds);
-        
+
         $this->assertEquals(['cat1', 'cat3'], $dto->categoryIds);
     }
 
     public function test_tagIds_canBeManipulated(): void
     {
         $dto = new QuestionDTO();
-        
+
         $dto->tagIds[] = 'tag1';
         $dto->tagIds[] = 'tag2';
         $dto->tagIds[] = 'tag3';
 
         $this->assertEquals(['tag1', 'tag2', 'tag3'], $dto->tagIds);
-        
+
         // Remove one tag
         $dto->tagIds = array_diff($dto->tagIds, ['tag2']);
-        
+
         $this->assertEquals(['tag1', 'tag3'], array_values($dto->tagIds));
     }
 
     public function test_metadata_canStoreComplexData(): void
     {
         $dto = new QuestionDTO();
-        
+
         $complexMetadata = [
             'source' => 'textbook',
             'chapter' => 5,
@@ -136,7 +136,7 @@ class QuestionDTOTest extends TestCase
                 'prerequisites' => ['basic-php', 'variables']
             ]
         ];
-        
+
         $dto->metadata = $complexMetadata;
 
         $this->assertEquals($complexMetadata, $dto->metadata);
@@ -148,7 +148,7 @@ class QuestionDTOTest extends TestCase
     public function test_difficultyRange_acceptsValidValues(): void
     {
         $dto = new QuestionDTO();
-        
+
         // Test all valid difficulty levels
         for ($difficulty = 1; $difficulty <= 5; $difficulty++) {
             $dto->difficulty = $difficulty;
@@ -159,9 +159,9 @@ class QuestionDTOTest extends TestCase
     public function test_scoreValues_acceptsPositiveNumbers(): void
     {
         $dto = new QuestionDTO();
-        
+
         $testScores = [0.5, 1.0, 5.0, 10.0, 15.5, 20.0, 50.0, 100.0];
-        
+
         foreach ($testScores as $score) {
             $dto->score = $score;
             $this->assertEquals($score, $dto->score);
@@ -171,7 +171,7 @@ class QuestionDTOTest extends TestCase
     public function test_allQuestionTypes_canBeAssigned(): void
     {
         $dto = new QuestionDTO();
-        
+
         foreach (QuestionType::cases() as $type) {
             $dto->type = $type;
             $this->assertEquals($type, $dto->type);
@@ -181,13 +181,13 @@ class QuestionDTOTest extends TestCase
     public function test_explanation_canBeSetAndCleared(): void
     {
         $dto = new QuestionDTO();
-        
+
         $dto->explanation = 'This is an explanation';
         $this->assertEquals('This is an explanation', $dto->explanation);
-        
+
         $dto->explanation = null;
         $this->assertNull($dto->explanation);
-        
+
         $dto->explanation = '';
         $this->assertEquals('', $dto->explanation);
     }
@@ -195,11 +195,11 @@ class QuestionDTOTest extends TestCase
     public function test_emptyArrays_remainEmptyWhenNotModified(): void
     {
         $dto = new QuestionDTO();
-        
+
         $this->assertEmpty($dto->categoryIds);
         $this->assertEmpty($dto->tagIds);
         $this->assertEmpty($dto->options);
-        
+
         // Verify they are actual arrays
         $this->assertIsArray($dto->categoryIds);
         $this->assertIsArray($dto->tagIds);

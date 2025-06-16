@@ -9,36 +9,45 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Uid\Uuid;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
+use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
+use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
+use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
+use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
 use Tourze\QuestionBankBundle\Repository\CategoryRepository;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
-#[ORM\Table(name: 'question_bank_categories')]
-#[ORM\UniqueConstraint(name: 'uniq_category_code', columns: ['code'])]
-#[ORM\Index(columns: ['sort_order'], name: 'idx_category_sort_order')]
-#[ORM\Index(columns: ['valid'], name: 'idx_category_valid')]
+#[ORM\Table(name: 'question_bank_categories', options: ['comment' => '题库分类表'])]
+#[UniqueEntity(fields: ['code'], message: '分类代码已存在')]
 class Category implements \Stringable
 {
     use TimestampableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    #[ORM\Column(type: UuidType::NAME, unique: true, options: ['comment' => '分类ID'])]
     private Uuid $id;
 
-    #[ORM\Column(type: Types::STRING, length: 100)]
+    #[TrackColumn]
+    #[ORM\Column(type: Types::STRING, length: 100, options: ['comment' => '分类名称'])]
     private string $name;
 
-    #[ORM\Column(type: Types::STRING, length: 50, unique: true)]
+    #[TrackColumn]
+    #[ORM\Column(type: Types::STRING, length: 50, unique: true, options: ['comment' => '分类代码'])]
     private string $code;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '分类描述'])]
     private ?string $description = null;
 
-    #[ORM\Column(type: Types::INTEGER)]
+    #[IndexColumn]
+    #[ORM\Column(type: Types::INTEGER, options: ['comment' => '排序顺序'])]
     private int $sortOrder = 0;
 
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[IndexColumn]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
     private bool $valid = true;
 
     #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'children', fetch: 'EXTRA_LAZY')]
@@ -58,12 +67,27 @@ class Category implements \Stringable
     #[ORM\ManyToMany(targetEntity: Question::class, mappedBy: 'categories', fetch: 'EXTRA_LAZY')]
     private Collection $questions;
 
-    #[ORM\Column(type: Types::INTEGER)]
+    #[ORM\Column(type: Types::INTEGER, options: ['comment' => '分类层级'])]
     private int $level = 0;
 
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[ORM\Column(type: Types::STRING, length: 255, options: ['comment' => '分类路径'])]
     private string $path = '';
 
+    #[CreatedByColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '创建者'])]
+    private ?string $createdBy = null;
+
+    #[UpdatedByColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '更新者'])]
+    private ?string $updatedBy = null;
+
+    #[CreateIpColumn]
+    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
+    private ?string $createdFromIp = null;
+
+    #[UpdateIpColumn]
+    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
+    private ?string $updatedFromIp = null;
 
     public function __construct(string $name, string $code)
     {
@@ -90,7 +114,6 @@ class Category implements \Stringable
     public function setName(string $name): self
     {
         $this->name = $name;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -102,7 +125,6 @@ class Category implements \Stringable
     public function setCode(string $code): self
     {
         $this->code = $code;
-        $this->updateTime = new \DateTimeImmutable();
         $this->updatePath();
         return $this;
     }
@@ -115,7 +137,6 @@ class Category implements \Stringable
     public function setDescription(?string $description): self
     {
         $this->description = $description;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -127,7 +148,6 @@ class Category implements \Stringable
     public function setSortOrder(int $sortOrder): self
     {
         $this->sortOrder = $sortOrder;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -139,7 +159,6 @@ class Category implements \Stringable
     public function setValid(bool $valid): self
     {
         $this->valid = $valid;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -158,21 +177,18 @@ class Category implements \Stringable
             throw new \InvalidArgumentException('Cannot set descendant as parent');
         }
 
-        // 从旧父级中移除
         if ($this->parent !== null && $this->parent->getChildren()->contains($this)) {
             $this->parent->getChildren()->removeElement($this);
         }
 
         $this->parent = $parent;
 
-        // 添加到新父级中
         if ($parent !== null && !$parent->getChildren()->contains($this)) {
             $parent->getChildren()->add($this);
         }
 
         $this->updateLevel();
         $this->updatePath();
-        $this->updateTime = new \DateTimeImmutable();
 
         return $this;
     }
@@ -224,14 +240,55 @@ class Category implements \Stringable
         return $this->questions;
     }
 
+    public function getCreatedBy(): ?string
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?string $createdBy): self
+    {
+        $this->createdBy = $createdBy;
+        return $this;
+    }
+
+    public function getUpdatedBy(): ?string
+    {
+        return $this->updatedBy;
+    }
+
+    public function setUpdatedBy(?string $updatedBy): self
+    {
+        $this->updatedBy = $updatedBy;
+        return $this;
+    }
+
+    public function getCreatedFromIp(): ?string
+    {
+        return $this->createdFromIp;
+    }
+
+    public function setCreatedFromIp(?string $createdFromIp): self
+    {
+        $this->createdFromIp = $createdFromIp;
+        return $this;
+    }
+
+    public function getUpdatedFromIp(): ?string
+    {
+        return $this->updatedFromIp;
+    }
+
+    public function setUpdatedFromIp(?string $updatedFromIp): self
+    {
+        $this->updatedFromIp = $updatedFromIp;
+        return $this;
+    }
+
     public function __toString(): string
     {
         return $this->name;
     }
 
-    /**
-     * 检查当前分类是否是指定分类的祖先
-     */
     public function isAncestorOf(self $category): bool
     {
         $parent = $category->getParent();
@@ -244,16 +301,12 @@ class Category implements \Stringable
         return false;
     }
 
-    /**
-     * 检查当前分类是否是指定分类的后代
-     */
     public function isDescendantOf(self $category): bool
     {
         return $category->isAncestorOf($this);
     }
 
     /**
-     * 获取所有祖先分类（从根到父）
      * @return array<self>
      */
     public function getAncestors(): array
@@ -270,7 +323,6 @@ class Category implements \Stringable
     }
 
     /**
-     * 获取从根到当前分类的完整路径
      * @return array<self>
      */
     public function getFullPath(): array
@@ -280,9 +332,6 @@ class Category implements \Stringable
         return $path;
     }
 
-    /**
-     * 更新层级
-     */
     private function updateLevel(): void
     {
         $this->level = $this->parent ? $this->parent->getLevel() + 1 : 0;
@@ -292,9 +341,6 @@ class Category implements \Stringable
         }
     }
 
-    /**
-     * 更新路径
-     */
     private function updatePath(): void
     {
         if ($this->parent) {

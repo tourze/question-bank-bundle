@@ -63,7 +63,7 @@ enum QuestionType: string
     }
 
     /**
-     * 转换为数组格式（兼容 exam-bundle）
+     * 转换为数组格式
      */
     public function toArray(): array
     {

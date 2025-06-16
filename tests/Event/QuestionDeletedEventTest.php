@@ -42,7 +42,7 @@ class QuestionDeletedEventTest extends TestCase
         // Arrange
         $ids = [];
         $events = [];
-        
+
         // Create multiple events
         for ($i = 0; $i < 5; $i++) {
             $id = (string) Uuid::v7();

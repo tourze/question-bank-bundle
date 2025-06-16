@@ -288,7 +288,7 @@ class TestEntityFactory
         return self::createQuestion([
             'title' => $title,
             'content' => 'PHP是一种___编程语言，主要用于___开发。',
-            'type' => QuestionType::FILL_IN_BLANK,
+            'type' => QuestionType::FILL_BLANK,
         ]);
     }
 

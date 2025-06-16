@@ -10,48 +10,59 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
+use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
+use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
+use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
+use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
 use Tourze\QuestionBankBundle\Enum\QuestionStatus;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
 use Tourze\QuestionBankBundle\Repository\QuestionRepository;
 use Tourze\QuestionBankBundle\ValueObject\Difficulty;
 
 #[ORM\Entity(repositoryClass: QuestionRepository::class)]
-#[ORM\Table(name: 'question_bank_questions')]
-#[ORM\Index(columns: ['type'], name: 'idx_question_type')]
-#[ORM\Index(columns: ['status'], name: 'idx_question_status')]
-#[ORM\Index(columns: ['difficulty'], name: 'idx_question_difficulty')]
-#[ORM\Index(columns: ['create_time'], name: 'idx_question_create_time')]
+#[ORM\Table(name: 'question_bank_questions', options: ['comment' => '题库问题表'])]
+#[ORM\Index(name: 'idx_question_type', columns: ['type'])]
+#[ORM\Index(name: 'idx_question_status', columns: ['status'])]
+#[ORM\Index(name: 'idx_question_difficulty', columns: ['difficulty'])]
+#[ORM\Index(name: 'idx_question_create_time', columns: ['create_time'])]
 class Question implements \Stringable
 {
     use TimestampableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    #[ORM\Column(type: UuidType::NAME, unique: true, options: ['comment' => '问题ID'])]
     private Uuid $id;
 
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[TrackColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, options: ['comment' => '问题标题'])]
     private string $title;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[TrackColumn]
+    #[ORM\Column(type: Types::TEXT, options: ['comment' => '问题内容'])]
     private string $content;
 
-    #[ORM\Column(type: Types::STRING, enumType: QuestionType::class)]
+    #[IndexColumn]
+    #[ORM\Column(type: Types::STRING, enumType: QuestionType::class, options: ['comment' => '问题类型'])]
     private QuestionType $type;
 
-    #[ORM\Column(type: Types::SMALLINT)]
+    #[IndexColumn]
+    #[ORM\Column(type: Types::SMALLINT, options: ['comment' => '难度级别'])]
     private int $difficulty;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
+    #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2, options: ['comment' => '分数'])]
     private string $score = '10.00';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '问题解释'])]
     private ?string $explanation = null;
 
-    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '扩展元数据'])]
     private ?array $metadata = null;
 
-    #[ORM\Column(type: Types::STRING, enumType: QuestionStatus::class)]
+    #[IndexColumn]
+    #[ORM\Column(type: Types::STRING, enumType: QuestionStatus::class, options: ['comment' => '问题状态'])]
     private QuestionStatus $status;
 
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'questions', fetch: 'EXTRA_LAZY')]
@@ -63,15 +74,30 @@ class Question implements \Stringable
     private Collection $tags;
 
     /**
-     * 问题选项
      * @var Collection<int, Option>
      */
-    #[ORM\OneToMany(targetEntity: Option::class, mappedBy: 'question', cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EXTRA_LAZY')]
+    #[ORM\OneToMany(targetEntity: Option::class, mappedBy: 'question', cascade: ['persist', 'remove'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     #[ORM\OrderBy(['sortOrder' => 'ASC'])]
     private Collection $options;
 
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
     private bool $valid = true;
+
+    #[CreatedByColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '创建者'])]
+    private ?string $createdBy = null;
+
+    #[UpdatedByColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '更新者'])]
+    private ?string $updatedBy = null;
+
+    #[CreateIpColumn]
+    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
+    private ?string $createdFromIp = null;
+
+    #[UpdateIpColumn]
+    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
+    private ?string $updatedFromIp = null;
 
     public function __construct(
         string $title,
@@ -117,7 +143,6 @@ class Question implements \Stringable
     public function setContent(string $content): self
     {
         $this->content = $content;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -134,7 +159,6 @@ class Question implements \Stringable
     public function setDifficulty(Difficulty $difficulty): self
     {
         $this->difficulty = $difficulty->getLevel();
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -146,7 +170,6 @@ class Question implements \Stringable
     public function setScore(float $score): self
     {
         $this->score = (string) $score;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -158,7 +181,6 @@ class Question implements \Stringable
     public function setExplanation(?string $explanation): self
     {
         $this->explanation = $explanation;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -170,7 +192,6 @@ class Question implements \Stringable
     public function setMetadata(?array $metadata): self
     {
         $this->metadata = $metadata;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -184,9 +205,8 @@ class Question implements \Stringable
         if ($this->status !== QuestionStatus::DRAFT) {
             throw new \LogicException('Only draft questions can be published');
         }
-        
+
         $this->status = QuestionStatus::PUBLISHED;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -195,9 +215,8 @@ class Question implements \Stringable
         if ($this->status !== QuestionStatus::PUBLISHED) {
             throw new \LogicException('Only published questions can be archived');
         }
-        
+
         $this->status = QuestionStatus::ARCHIVED;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -213,11 +232,9 @@ class Question implements \Stringable
     {
         if (!$this->categories->contains($category)) {
             $this->categories->add($category);
-            // 建立双向关联
             if (!$category->getQuestions()->contains($this)) {
                 $category->getQuestions()->add($this);
             }
-            $this->updateTime = new \DateTimeImmutable();
         }
 
         return $this;
@@ -226,11 +243,9 @@ class Question implements \Stringable
     public function removeCategory(Category $category): self
     {
         if ($this->categories->removeElement($category)) {
-            // 移除双向关联
             if ($category->getQuestions()->contains($this)) {
                 $category->getQuestions()->removeElement($this);
             }
-            $this->updateTime = new \DateTimeImmutable();
         }
 
         return $this;
@@ -249,7 +264,6 @@ class Question implements \Stringable
         if (!$this->tags->contains($tag)) {
             $this->tags->add($tag);
             $tag->incrementUsageCount();
-            $this->updateTime = new \DateTimeImmutable();
         }
 
         return $this;
@@ -259,7 +273,6 @@ class Question implements \Stringable
     {
         if ($this->tags->removeElement($tag)) {
             $tag->decrementUsageCount();
-            $this->updateTime = new \DateTimeImmutable();
         }
 
         return $this;
@@ -278,7 +291,6 @@ class Question implements \Stringable
         if (!$this->options->contains($option)) {
             $this->options->add($option);
             $option->setQuestion($this);
-            $this->updateTime = new \DateTimeImmutable();
         }
 
         return $this;
@@ -290,7 +302,6 @@ class Question implements \Stringable
             if ($option->getQuestion() === $this) {
                 $option->setQuestion(null);
             }
-            $this->updateTime = new \DateTimeImmutable();
         }
 
         return $this;
@@ -314,7 +325,50 @@ class Question implements \Stringable
     public function setValid(bool $valid): self
     {
         $this->valid = $valid;
-        $this->updateTime = new \DateTimeImmutable();
+        return $this;
+    }
+
+    public function getCreatedBy(): ?string
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?string $createdBy): self
+    {
+        $this->createdBy = $createdBy;
+        return $this;
+    }
+
+    public function getUpdatedBy(): ?string
+    {
+        return $this->updatedBy;
+    }
+
+    public function setUpdatedBy(?string $updatedBy): self
+    {
+        $this->updatedBy = $updatedBy;
+        return $this;
+    }
+
+    public function getCreatedFromIp(): ?string
+    {
+        return $this->createdFromIp;
+    }
+
+    public function setCreatedFromIp(?string $createdFromIp): self
+    {
+        $this->createdFromIp = $createdFromIp;
+        return $this;
+    }
+
+    public function getUpdatedFromIp(): ?string
+    {
+        return $this->updatedFromIp;
+    }
+
+    public function setUpdatedFromIp(?string $updatedFromIp): self
+    {
+        $this->updatedFromIp = $updatedFromIp;
         return $this;
     }
 
@@ -334,14 +388,14 @@ class Question implements \Stringable
     }
 
     /**
-     * 兼容 exam-bundle 的 API 数组方法 - 完整信息（包含正确答案）
+     * 完整信息（包含正确答案）
      */
     public function retrieveApiArray(): array
     {
         $options = [];
         $letterMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
         $correctLetters = [];
-        
+
         foreach ($this->getOptions() as $i => $option) {
             $letter = $letterMap[$i] ?? chr(65 + $i);
             $options[] = [
@@ -364,9 +418,6 @@ class Question implements \Stringable
         ];
     }
 
-    /**
-     * 兼容 exam-bundle 的隐藏答案 API 数组方法
-     */
     public function retrieveSecretArray(): array
     {
         $result = $this->retrieveApiArray();

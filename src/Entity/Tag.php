@@ -9,35 +9,43 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Uid\Uuid;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
+use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
+use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
+use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
+use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
 use Tourze\QuestionBankBundle\Repository\TagRepository;
 
 #[ORM\Entity(repositoryClass: TagRepository::class)]
-#[ORM\Table(name: 'question_bank_tags')]
-#[ORM\UniqueConstraint(name: 'uniq_tag_slug', columns: ['slug'])]
-#[ORM\Index(columns: ['usage_count'], name: 'idx_tag_usage_count')]
+#[ORM\Table(name: 'question_bank_tags', options: ['comment' => '题库标签表'])]
+#[UniqueEntity(fields: ['slug'], message: '标签slug已存在')]
 class Tag implements \Stringable
 {
     use TimestampableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    #[ORM\Column(type: UuidType::NAME, unique: true, options: ['comment' => '标签ID'])]
     private Uuid $id;
 
-    #[ORM\Column(type: Types::STRING, length: 50)]
+    #[TrackColumn]
+    #[ORM\Column(type: Types::STRING, length: 50, options: ['comment' => '标签名称'])]
     private string $name;
 
-    #[ORM\Column(type: Types::STRING, length: 50, unique: true)]
+    #[ORM\Column(type: Types::STRING, length: 50, unique: true, options: ['comment' => '标签别名（URL友好）'])]
     private string $slug;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '标签描述'])]
     private ?string $description = null;
 
-    #[ORM\Column(type: Types::STRING, length: 7, nullable: true)]
+    #[ORM\Column(type: Types::STRING, length: 7, nullable: true, options: ['comment' => '标签颜色（十六进制）'])]
     private ?string $color = null;
 
-    #[ORM\Column(type: Types::INTEGER)]
+    #[IndexColumn]
+    #[ORM\Column(type: Types::INTEGER, options: ['comment' => '使用次数统计'])]
     private int $usageCount = 0;
 
     /**
@@ -46,9 +54,24 @@ class Tag implements \Stringable
     #[ORM\ManyToMany(targetEntity: Question::class, mappedBy: 'tags', fetch: 'EXTRA_LAZY')]
     private Collection $questions;
 
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
     private bool $valid = true;
 
+    #[CreatedByColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '创建者'])]
+    private ?string $createdBy = null;
+
+    #[UpdatedByColumn]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '更新者'])]
+    private ?string $updatedBy = null;
+
+    #[CreateIpColumn]
+    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
+    private ?string $createdFromIp = null;
+
+    #[UpdateIpColumn]
+    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
+    private ?string $updatedFromIp = null;
 
     public function __construct(string $name, ?string $slug = null)
     {
@@ -73,7 +96,6 @@ class Tag implements \Stringable
     public function setName(string $name): self
     {
         $this->name = $name;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -85,7 +107,6 @@ class Tag implements \Stringable
     public function setSlug(string $slug): self
     {
         $this->slug = $slug;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -97,7 +118,6 @@ class Tag implements \Stringable
     public function setDescription(?string $description): self
     {
         $this->description = $description;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -113,7 +133,6 @@ class Tag implements \Stringable
         }
         
         $this->color = $color;
-        $this->updateTime = new \DateTimeImmutable();
         return $this;
     }
 
@@ -152,7 +171,50 @@ class Tag implements \Stringable
     public function setValid(bool $valid): self
     {
         $this->valid = $valid;
-        $this->updateTime = new \DateTimeImmutable();
+        return $this;
+    }
+
+    public function getCreatedBy(): ?string
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?string $createdBy): self
+    {
+        $this->createdBy = $createdBy;
+        return $this;
+    }
+
+    public function getUpdatedBy(): ?string
+    {
+        return $this->updatedBy;
+    }
+
+    public function setUpdatedBy(?string $updatedBy): self
+    {
+        $this->updatedBy = $updatedBy;
+        return $this;
+    }
+
+    public function getCreatedFromIp(): ?string
+    {
+        return $this->createdFromIp;
+    }
+
+    public function setCreatedFromIp(?string $createdFromIp): self
+    {
+        $this->createdFromIp = $createdFromIp;
+        return $this;
+    }
+
+    public function getUpdatedFromIp(): ?string
+    {
+        return $this->updatedFromIp;
+    }
+
+    public function setUpdatedFromIp(?string $updatedFromIp): self
+    {
+        $this->updatedFromIp = $updatedFromIp;
         return $this;
     }
 
@@ -161,12 +223,8 @@ class Tag implements \Stringable
         return $this->name;
     }
 
-    /**
-     * 生成 slug
-     */
     private function generateSlug(string $text): string
     {
-        // 简单的 slug 生成逻辑
         $slug = strtolower($text);
         $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
         $slug = preg_replace('/[\s]+/', '-', $slug);

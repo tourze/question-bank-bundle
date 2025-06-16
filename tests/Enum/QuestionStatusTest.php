@@ -82,7 +82,7 @@ class QuestionStatusTest extends TestCase
     public function test_statusWorkflow_draftToPublished(): void
     {
         $draft = QuestionStatus::DRAFT;
-        
+
         $this->assertTrue($draft->isEditable());
         $this->assertFalse($draft->isUsable());
     }
@@ -90,7 +90,7 @@ class QuestionStatusTest extends TestCase
     public function test_statusWorkflow_publishedToArchived(): void
     {
         $published = QuestionStatus::PUBLISHED;
-        
+
         $this->assertFalse($published->isEditable());
         $this->assertTrue($published->isUsable());
     }
@@ -98,7 +98,7 @@ class QuestionStatusTest extends TestCase
     public function test_statusWorkflow_archivedState(): void
     {
         $archived = QuestionStatus::ARCHIVED;
-        
+
         $this->assertFalse($archived->isEditable());
         $this->assertFalse($archived->isUsable());
     }
