@@ -193,8 +193,8 @@ class TagService implements TagServiceInterface
     private function generateSlug(string $text): string
     {
         $slug = strtolower($text);
-        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
-        $slug = preg_replace('/[\s]+/', '-', $slug);
+        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug) ?? '';
+        $slug = preg_replace('/[\s]+/', '-', $slug) ?? '';
         $slug = trim($slug, '-');
         return $slug;
     }

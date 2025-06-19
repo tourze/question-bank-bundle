@@ -19,11 +19,8 @@ class QuestionDTOTest extends TestCase
         $this->assertEquals(10.0, $dto->score);
         $this->assertNull($dto->explanation);
         $this->assertNull($dto->metadata);
-        $this->assertIsArray($dto->categoryIds);
         $this->assertEmpty($dto->categoryIds);
-        $this->assertIsArray($dto->tagIds);
         $this->assertEmpty($dto->tagIds);
-        $this->assertIsArray($dto->options);
         $this->assertEmpty($dto->options);
     }
 
@@ -201,8 +198,6 @@ class QuestionDTOTest extends TestCase
         $this->assertEmpty($dto->options);
 
         // Verify they are actual arrays
-        $this->assertIsArray($dto->categoryIds);
-        $this->assertIsArray($dto->tagIds);
-        $this->assertIsArray($dto->options);
+
     }
 }

@@ -50,7 +50,6 @@ class QuestionStatusTest extends TestCase
     {
         foreach (QuestionStatus::cases() as $case) {
             $label = $case->getLabel();
-            $this->assertIsString($label);
             $this->assertNotEmpty($label);
         }
     }

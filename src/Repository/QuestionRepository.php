@@ -121,7 +121,7 @@ class QuestionRepository extends ServiceEntityRepository implements QuestionRepo
 
     public function findRandom(int $limit, ?SearchCriteria $criteria = null): array
     {
-        $qb = $criteria ? $this->createSearchQueryBuilder($criteria) : $this->createQueryBuilder('q');
+        $qb = $criteria !== null ? $this->createSearchQueryBuilder($criteria) : $this->createQueryBuilder('q');
         
         // 先获取所有符合条件的记录，然后在PHP中随机化
         $allResults = $qb->getQuery()->getResult();
@@ -141,7 +141,7 @@ class QuestionRepository extends ServiceEntityRepository implements QuestionRepo
         $qb = $this->createQueryBuilder('q');
 
         // 关键词搜索
-        if ($criteria->getKeyword()) {
+        if (!empty($criteria->getKeyword())) {
             $qb->andWhere('(q.title LIKE :keyword OR q.content LIKE :keyword)')
                 ->setParameter('keyword', '%' . $criteria->getKeyword() . '%');
         }

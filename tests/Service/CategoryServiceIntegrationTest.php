@@ -313,7 +313,6 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $tree = $this->categoryService->getCategoryTree();
 
         // Assert
-        $this->assertIsArray($tree);
         $this->assertNotEmpty($tree);
     }
 
@@ -370,7 +369,6 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $path = $this->categoryService->getCategoryPath((string) $child->getId());
 
         // Assert
-        $this->assertIsArray($path);
         $this->assertCount(2, $path);
         $this->assertEquals('Technology', $path[0]->getName());
         $this->assertEquals('Programming', $path[1]->getName());

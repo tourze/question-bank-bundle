@@ -123,7 +123,6 @@ class TagRepositoryTest extends BaseIntegrationTestCase
         $tags = $this->repository->findByNames([]);
 
         // Assert
-        $this->assertIsArray($tags);
         $this->assertEmpty($tags);
     }
 

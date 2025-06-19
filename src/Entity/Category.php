@@ -8,7 +8,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Uid\Uuid;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
@@ -16,8 +15,7 @@ use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
-use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
-use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
+use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 use Tourze\QuestionBankBundle\Repository\CategoryRepository;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
@@ -26,9 +24,10 @@ use Tourze\QuestionBankBundle\Repository\CategoryRepository;
 class Category implements \Stringable
 {
     use TimestampableAware;
+    use BlameableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: UuidType::NAME, unique: true, options: ['comment' => '分类ID'])]
+    #[ORM\Column(type: Types::GUID, unique: true, options: ['comment' => '分类ID'])]
     private Uuid $id;
 
     #[TrackColumn]
@@ -73,13 +72,6 @@ class Category implements \Stringable
     #[ORM\Column(type: Types::STRING, length: 255, options: ['comment' => '分类路径'])]
     private string $path = '';
 
-    #[CreatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '创建者'])]
-    private ?string $createdBy = null;
-
-    #[UpdatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '更新者'])]
-    private ?string $updatedBy = null;
 
     #[CreateIpColumn]
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
@@ -173,7 +165,7 @@ class Category implements \Stringable
             throw new \InvalidArgumentException('Category cannot be its own parent');
         }
 
-        if ($parent && $this->isAncestorOf($parent)) {
+        if ($parent !== null && $this->isAncestorOf($parent)) {
             throw new \InvalidArgumentException('Cannot set descendant as parent');
         }
 
@@ -238,28 +230,6 @@ class Category implements \Stringable
     public function getQuestions(): Collection
     {
         return $this->questions;
-    }
-
-    public function getCreatedBy(): ?string
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(?string $createdBy): self
-    {
-        $this->createdBy = $createdBy;
-        return $this;
-    }
-
-    public function getUpdatedBy(): ?string
-    {
-        return $this->updatedBy;
-    }
-
-    public function setUpdatedBy(?string $updatedBy): self
-    {
-        $this->updatedBy = $updatedBy;
-        return $this;
     }
 
     public function getCreatedFromIp(): ?string
@@ -334,7 +304,7 @@ class Category implements \Stringable
 
     private function updateLevel(): void
     {
-        $this->level = $this->parent ? $this->parent->getLevel() + 1 : 0;
+        $this->level = $this->parent !== null ? $this->parent->getLevel() + 1 : 0;
 
         foreach ($this->children as $child) {
             $child->updateLevel();
@@ -343,7 +313,7 @@ class Category implements \Stringable
 
     private function updatePath(): void
     {
-        if ($this->parent) {
+        if ($this->parent !== null) {
             $this->path = $this->parent->getPath() . '/' . $this->code;
         } else {
             $this->path = '/' . $this->code;

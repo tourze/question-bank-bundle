@@ -4,8 +4,17 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Enum;
 
-enum QuestionType: string
+use Tourze\EnumExtra\Itemable;
+use Tourze\EnumExtra\ItemTrait;
+use Tourze\EnumExtra\Labelable;
+use Tourze\EnumExtra\Selectable;
+use Tourze\EnumExtra\SelectTrait;
+
+enum QuestionType: string implements Itemable, Labelable, Selectable
 {
+    use ItemTrait;
+    use SelectTrait;
+
     case SINGLE_CHOICE = 'single_choice';
     case MULTIPLE_CHOICE = 'multiple_choice';
     case TRUE_FALSE = 'true_false';

@@ -8,15 +8,13 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
 use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
-use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
-use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
+use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 use Tourze\QuestionBankBundle\Enum\QuestionStatus;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
 use Tourze\QuestionBankBundle\Repository\QuestionRepository;
@@ -31,9 +29,10 @@ use Tourze\QuestionBankBundle\ValueObject\Difficulty;
 class Question implements \Stringable
 {
     use TimestampableAware;
+    use BlameableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: UuidType::NAME, unique: true, options: ['comment' => '问题ID'])]
+    #[ORM\Column(type: Types::GUID, unique: true, options: ['comment' => '问题ID'])]
     private Uuid $id;
 
     #[TrackColumn]
@@ -83,13 +82,6 @@ class Question implements \Stringable
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
     private bool $valid = true;
 
-    #[CreatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '创建者'])]
-    private ?string $createdBy = null;
-
-    #[UpdatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '更新者'])]
-    private ?string $updatedBy = null;
 
     #[CreateIpColumn]
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
@@ -328,27 +320,6 @@ class Question implements \Stringable
         return $this;
     }
 
-    public function getCreatedBy(): ?string
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(?string $createdBy): self
-    {
-        $this->createdBy = $createdBy;
-        return $this;
-    }
-
-    public function getUpdatedBy(): ?string
-    {
-        return $this->updatedBy;
-    }
-
-    public function setUpdatedBy(?string $updatedBy): self
-    {
-        $this->updatedBy = $updatedBy;
-        return $this;
-    }
 
     public function getCreatedFromIp(): ?string
     {

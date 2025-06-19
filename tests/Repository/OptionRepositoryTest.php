@@ -171,7 +171,6 @@ class OptionRepositoryTest extends BaseIntegrationTestCase
         );
 
         // Assert
-        $this->assertIsArray($options);
         $this->assertCount(0, $options);
     }
 
