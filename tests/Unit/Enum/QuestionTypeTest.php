@@ -58,7 +58,6 @@ class QuestionTypeTest extends TestCase
     {
         $array = QuestionType::SINGLE_CHOICE->toArray();
         
-        $this->assertIsArray($array);
         $this->assertArrayHasKey('value', $array);
         $this->assertArrayHasKey('label', $array);
         $this->assertEquals('single_choice', $array['value']);
@@ -73,7 +72,6 @@ class QuestionTypeTest extends TestCase
         
         foreach ($cases as $case) {
             // 验证每个case都有标签
-            $this->assertIsString($case->getLabel());
             $this->assertNotEmpty($case->getLabel());
             
             // 验证选项范围的逻辑一致性
@@ -132,7 +130,6 @@ class QuestionTypeTest extends TestCase
         foreach (QuestionType::cases() as $type) {
             $array = $type->toArray();
             
-            $this->assertIsArray($array);
             $this->assertArrayHasKey('value', $array);
             $this->assertArrayHasKey('label', $array);
             $this->assertEquals($type->value, $array['value']);

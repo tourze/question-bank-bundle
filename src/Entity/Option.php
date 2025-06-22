@@ -24,7 +24,7 @@ class Option implements \Stringable
     use BlameableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: Types::GUID, unique: true, options: ['comment' => '选项ID'])]
+    #[ORM\Column(type: 'uuid', unique: true, options: ['comment' => '选项ID'])]
     private Uuid $id;
 
     #[TrackColumn]

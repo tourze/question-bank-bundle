@@ -27,7 +27,7 @@ class Tag implements \Stringable
     use BlameableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: Types::GUID, unique: true, options: ['comment' => '标签ID'])]
+    #[ORM\Column(type: 'uuid', unique: true, options: ['comment' => '标签ID'])]
     private Uuid $id;
 
     #[TrackColumn]
@@ -123,7 +123,7 @@ class Tag implements \Stringable
         if ($color !== null && !preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
             throw new \InvalidArgumentException('Color must be a valid hex color (e.g., #FF0000)');
         }
-        
+
         $this->color = $color;
         return $this;
     }

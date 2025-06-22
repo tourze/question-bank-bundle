@@ -139,7 +139,7 @@ class OptionRepositoryTest extends BaseIntegrationTestCase
         // 暂时使用 findAll 来测试基本功能，直到解决关联查询问题
         $allOptions = $this->repository->findAll();
         $options = array_filter($allOptions, fn($option) => 
-            $option->getQuestion() && $option->getQuestion()->getId()->equals($question->getId())
+            $option->getQuestion() !== null && $option->getQuestion()->getId()->equals($question->getId())
         );
         
         // 按 sortOrder 排序
@@ -150,10 +150,9 @@ class OptionRepositoryTest extends BaseIntegrationTestCase
         $this->assertContainsOnlyInstancesOf(Option::class, $options);
         
         // 验证排序
-        $optionsArray = array_values($options);
-        $this->assertEquals('Option A', $optionsArray[0]->getContent());
-        $this->assertEquals('Option B', $optionsArray[1]->getContent());
-        $this->assertEquals('Option C', $optionsArray[2]->getContent());
+        $this->assertEquals('Option A', $options[0]->getContent());
+        $this->assertEquals('Option B', $options[1]->getContent());
+        $this->assertEquals('Option C', $options[2]->getContent());
     }
 
     public function test_findByQuestion_withEmptyQuestion_returnsEmptyArray(): void
@@ -167,7 +166,7 @@ class OptionRepositoryTest extends BaseIntegrationTestCase
         // 使用替代方案直到解决关联查询问题
         $allOptions = $this->repository->findAll();
         $options = array_filter($allOptions, fn($option) => 
-            $option->getQuestion() && $option->getQuestion()->getId()->equals($question->getId())
+            $option->getQuestion() !== null && $option->getQuestion()->getId()->equals($question->getId())
         );
 
         // Assert
@@ -196,7 +195,7 @@ class OptionRepositoryTest extends BaseIntegrationTestCase
         // 使用替代方案直到解决关联查询问题
         $allOptions = $this->repository->findAll();
         $correctOptions = array_filter($allOptions, fn($option) => 
-            $option->getQuestion() && 
+            $option->getQuestion() !== null && 
             $option->getQuestion()->getId()->equals($question->getId()) &&
             $option->isCorrect()
         );
@@ -231,7 +230,7 @@ class OptionRepositoryTest extends BaseIntegrationTestCase
         // 使用替代方案直到解决关联查询问题
         $allOptions = $this->repository->findAll();
         $options = array_filter($allOptions, fn($option) => 
-            $option->getQuestion() && $option->getQuestion()->getId()->equals($question->getId())
+            $option->getQuestion() !== null && $option->getQuestion()->getId()->equals($question->getId())
         );
         $count = count($options);
 
@@ -273,16 +272,15 @@ class OptionRepositoryTest extends BaseIntegrationTestCase
         // 使用替代方案直到解决关联查询问题
         $allOptions = $this->repository->findAll();
         $options = array_filter($allOptions, fn($option) => 
-            $option->getQuestion() && $option->getQuestion()->getId()->equals($question->getId())
+            $option->getQuestion() !== null && $option->getQuestion()->getId()->equals($question->getId())
         );
         
         // 按 sortOrder 排序
         usort($options, fn($a, $b) => $a->getSortOrder() <=> $b->getSortOrder());
-        $optionsArray = array_values($options);
         
-        $this->assertEquals('Option C', $optionsArray[0]->getContent());
-        $this->assertEquals('Option A', $optionsArray[1]->getContent());
-        $this->assertEquals('Option B', $optionsArray[2]->getContent());
+        $this->assertEquals('Option C', $options[0]->getContent());
+        $this->assertEquals('Option A', $options[1]->getContent());
+        $this->assertEquals('Option B', $options[2]->getContent());
     }
 
     protected function setUp(): void

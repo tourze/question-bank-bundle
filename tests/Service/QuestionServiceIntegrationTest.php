@@ -68,8 +68,8 @@ class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
         $this->tagRepository->save($tag);
         
         $dto = $this->createQuestionDTO();
-        $dto->categoryIds = [$category->getId()];
-        $dto->tagIds = [$tag->getId()];
+        $dto->categoryIds = [(string) $category->getId()];
+        $dto->tagIds = [(string) $tag->getId()];
         
         $question = $this->questionService->createQuestion($dto);
 

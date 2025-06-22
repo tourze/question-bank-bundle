@@ -32,7 +32,7 @@ class Question implements \Stringable
     use BlameableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: Types::GUID, unique: true, options: ['comment' => '问题ID'])]
+    #[ORM\Column(type: 'uuid', unique: true, options: ['comment' => '问题ID'])]
     private Uuid $id;
 
     #[TrackColumn]

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tourze\QuestionBankBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 use Tourze\QuestionBankBundle\Entity\Option;
 use Tourze\QuestionBankBundle\Entity\Question;
@@ -33,7 +34,7 @@ class OptionRepository extends ServiceEntityRepository
         $this->getEntityManager()->flush();
     }
 
-    public function find($id, $lockMode = null, $lockVersion = null): ?Option
+    public function find($id, LockMode|int|null $lockMode = null, $lockVersion = null): ?Option
     {
         return parent::find($id, $lockMode, $lockVersion);
     }
@@ -84,7 +85,7 @@ class OptionRepository extends ServiceEntityRepository
         foreach ($reorderData as $optionId => $newOrder) {
             // 使用实体方式更新以确保正确处理 UUID
             $option = $this->find($optionId);
-            if ($option) {
+            if ($option !== null) {
                 $option->setSortOrder($newOrder);
                 $this->getEntityManager()->persist($option);
             }

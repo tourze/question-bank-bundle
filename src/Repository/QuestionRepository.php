@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tourze\QuestionBankBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
@@ -38,7 +39,7 @@ class QuestionRepository extends ServiceEntityRepository implements QuestionRepo
         $this->getEntityManager()->flush();
     }
 
-    public function find($id, $lockMode = null, $lockVersion = null): ?Question
+    public function find($id, LockMode|int|null $lockMode = null, $lockVersion = null): ?Question
     {
         return parent::find($id, $lockMode, $lockVersion);
     }

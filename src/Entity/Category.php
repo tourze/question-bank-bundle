@@ -27,7 +27,7 @@ class Category implements \Stringable
     use BlameableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: Types::GUID, unique: true, options: ['comment' => '分类ID'])]
+    #[ORM\Column(type: 'uuid', unique: true, options: ['comment' => '分类ID'])]
     private Uuid $id;
 
     #[TrackColumn]

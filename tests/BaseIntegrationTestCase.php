@@ -60,7 +60,7 @@ abstract class BaseIntegrationTestCase extends KernelTestCase
         $platform = $connection->getDatabasePlatform();
 
         // 根据数据库平台处理外键检查
-        if ($platform instanceof \Doctrine\DBAL\Platforms\SqlitePlatform) {
+        if ($platform instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
             $connection->executeStatement('PRAGMA foreign_keys = OFF');
         } elseif ($platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform) {
             $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
@@ -85,7 +85,7 @@ abstract class BaseIntegrationTestCase extends KernelTestCase
         }
 
         // 重新启用外键检查
-        if ($platform instanceof \Doctrine\DBAL\Platforms\SqlitePlatform) {
+        if ($platform instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
             $connection->executeStatement('PRAGMA foreign_keys = ON');
         } elseif ($platform instanceof \Doctrine\DBAL\Platforms\MySQLPlatform) {
             $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
