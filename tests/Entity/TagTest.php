@@ -91,7 +91,7 @@ class TagTest extends TestCase
     {
         $tag = new Tag('Test Tag');
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\TagValidationException::class);
         $this->expectExceptionMessage('Color must be a valid hex color (e.g., #FF0000)');
 
         $tag->setColor('invalid-color');
@@ -101,7 +101,7 @@ class TagTest extends TestCase
     {
         $tag = new Tag('Test Tag');
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\TagValidationException::class);
         $this->expectExceptionMessage('Color must be a valid hex color (e.g., #FF0000)');
 
         $tag->setColor('#FFF');
@@ -111,7 +111,7 @@ class TagTest extends TestCase
     {
         $tag = new Tag('Test Tag');
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\TagValidationException::class);
         $this->expectExceptionMessage('Color must be a valid hex color (e.g., #FF0000)');
 
         $tag->setColor('FF0000');

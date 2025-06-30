@@ -16,6 +16,7 @@ use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
+use Tourze\QuestionBankBundle\Exception\CategoryHierarchyException;
 use Tourze\QuestionBankBundle\Repository\CategoryRepository;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
@@ -56,8 +57,8 @@ class Category implements \Stringable
     /**
      * @var Collection<int, self>
      */
-    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent', cascade: ['persist'], fetch: 'EXTRA_LAZY')]
-    #[ORM\OrderBy(['sortOrder' => 'ASC', 'name' => 'ASC'])]
+    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class, cascade: ['persist'], fetch: 'EXTRA_LAZY')]
+    #[ORM\OrderBy(value: ['sortOrder' => 'ASC', 'name' => 'ASC'])]
     private Collection $children;
 
     /**
@@ -162,11 +163,11 @@ class Category implements \Stringable
     public function setParent(?self $parent): self
     {
         if ($parent === $this) {
-            throw new \InvalidArgumentException('Category cannot be its own parent');
+            throw new CategoryHierarchyException('Category cannot be its own parent');
         }
 
         if ($parent !== null && $this->isAncestorOf($parent)) {
-            throw new \InvalidArgumentException('Cannot set descendant as parent');
+            throw new CategoryHierarchyException('Cannot set descendant as parent');
         }
 
         if ($this->parent !== null && $this->parent->getChildren()->contains($this)) {

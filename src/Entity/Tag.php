@@ -16,6 +16,7 @@ use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
+use Tourze\QuestionBankBundle\Exception\TagValidationException;
 use Tourze\QuestionBankBundle\Repository\TagRepository;
 
 #[ORM\Entity(repositoryClass: TagRepository::class)]
@@ -121,7 +122,7 @@ class Tag implements \Stringable
     public function setColor(?string $color): self
     {
         if ($color !== null && !preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
-            throw new \InvalidArgumentException('Color must be a valid hex color (e.g., #FF0000)');
+            throw new TagValidationException('Color must be a valid hex color (e.g., #FF0000)');
         }
 
         $this->color = $color;

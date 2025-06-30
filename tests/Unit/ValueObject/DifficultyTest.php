@@ -20,7 +20,7 @@ class DifficultyTest extends TestCase
     
     public function testCreateWithInvalidLevel(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\DifficultyValidationException::class);
         $this->expectExceptionMessage('Difficulty level must be between 1 and 5, 6 given');
         
         new Difficulty(6);

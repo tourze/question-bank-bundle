@@ -89,7 +89,7 @@ class CategoryTest extends TestCase
     {
         $category = new Category('Test Category', 'test_category');
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\CategoryHierarchyException::class);
         $this->expectExceptionMessage('Category cannot be its own parent');
 
         $category->setParent($category);
@@ -104,7 +104,7 @@ class CategoryTest extends TestCase
         $parent->setParent($grandparent);
         $child->setParent($parent);
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\CategoryHierarchyException::class);
         $this->expectExceptionMessage('Cannot set descendant as parent');
 
         $grandparent->setParent($child);

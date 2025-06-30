@@ -17,6 +17,7 @@ use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 use Tourze\QuestionBankBundle\Enum\QuestionStatus;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
+use Tourze\QuestionBankBundle\Exception\QuestionStateException;
 use Tourze\QuestionBankBundle\Repository\QuestionRepository;
 use Tourze\QuestionBankBundle\ValueObject\Difficulty;
 
@@ -75,8 +76,8 @@ class Question implements \Stringable
     /**
      * @var Collection<int, Option>
      */
-    #[ORM\OneToMany(targetEntity: Option::class, mappedBy: 'question', cascade: ['persist', 'remove'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
-    #[ORM\OrderBy(['sortOrder' => 'ASC'])]
+    #[ORM\OneToMany(mappedBy: 'question', targetEntity: Option::class, cascade: ['persist', 'remove'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
+    #[ORM\OrderBy(value: ['sortOrder' => 'ASC'])]
     private Collection $options;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
@@ -195,7 +196,7 @@ class Question implements \Stringable
     public function publish(): self
     {
         if ($this->status !== QuestionStatus::DRAFT) {
-            throw new \LogicException('Only draft questions can be published');
+            throw new QuestionStateException('Only draft questions can be published');
         }
 
         $this->status = QuestionStatus::PUBLISHED;
@@ -205,7 +206,7 @@ class Question implements \Stringable
     public function archive(): self
     {
         if ($this->status !== QuestionStatus::PUBLISHED) {
-            throw new \LogicException('Only published questions can be archived');
+            throw new QuestionStateException('Only published questions can be archived');
         }
 
         $this->status = QuestionStatus::ARCHIVED;

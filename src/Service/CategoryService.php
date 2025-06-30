@@ -127,7 +127,13 @@ class CategoryService implements CategoryServiceInterface
         
         $this->categoryRepository->save($category);
         
-        $this->eventDispatcher->dispatch(new CategoryReorganizedEvent($category));
+        $this->eventDispatcher->dispatch(new CategoryReorganizedEvent(
+            $category->getId(),
+            $category->getParent()?->getId(),
+            '', // old path - would need to be tracked
+            $category->getPath(),
+            [] // affected children - would need to be calculated
+        ));
     }
 
     public function getCategoryTree(): array

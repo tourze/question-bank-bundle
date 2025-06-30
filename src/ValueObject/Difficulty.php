@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\ValueObject;
 
-use InvalidArgumentException;
+use Tourze\QuestionBankBundle\Exception\DifficultyValidationException;
 
 final class Difficulty
 {
@@ -24,7 +24,7 @@ final class Difficulty
     public function __construct(int $level)
     {
         if ($level < self::MIN_LEVEL || $level > self::MAX_LEVEL) {
-            throw new InvalidArgumentException(
+            throw new DifficultyValidationException(
                 sprintf('Difficulty level must be between %d and %d, %d given', 
                     self::MIN_LEVEL, 
                     self::MAX_LEVEL, 

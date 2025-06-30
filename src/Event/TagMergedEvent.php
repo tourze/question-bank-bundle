@@ -4,21 +4,29 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Event;
 
+use Symfony\Component\Uid\Uuid;
+
 class TagMergedEvent extends QuestionBankEvent
 {
     public function __construct(
-        private readonly string $sourceTagId,
-        private readonly string $targetTagId
+        private readonly Uuid $sourceTagId,
+        private readonly Uuid $targetTagId,
+        private readonly array $affectedQuestions
     ) {
     }
 
-    public function getSourceTagId(): string
+    public function getSourceTagId(): Uuid
     {
         return $this->sourceTagId;
     }
 
-    public function getTargetTagId(): string
+    public function getTargetTagId(): Uuid
     {
         return $this->targetTagId;
+    }
+    
+    public function getAffectedQuestions(): array
+    {
+        return $this->affectedQuestions;
     }
 }

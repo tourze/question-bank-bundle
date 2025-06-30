@@ -239,7 +239,7 @@ class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
     {
         $question = $this->createTestQuestion();
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\QuestionStateException::class);
         $this->expectExceptionMessage('Only published questions can be archived');
 
         $this->questionService->archiveQuestion((string) $question->getId());

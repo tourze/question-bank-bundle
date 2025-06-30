@@ -152,7 +152,11 @@ class TagService implements TagServiceInterface
         // 删除源标签
         $this->tagRepository->remove($sourceTag);
         
-        $this->eventDispatcher->dispatch(new TagMergedEvent($sourceId, $targetId));
+        $this->eventDispatcher->dispatch(new TagMergedEvent(
+            \Symfony\Component\Uid\Uuid::fromString($sourceId),
+            \Symfony\Component\Uid\Uuid::fromString($targetId),
+            [] // affected questions - would need to be calculated
+        ));
     }
 
     public function searchTags(string $keyword, int $limit = 10): array

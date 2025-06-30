@@ -113,7 +113,7 @@ class QuestionTest extends TestCase
         $question = $this->createTestQuestion();
         $question->publish(); // 先发布
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\QuestionStateException::class);
         $this->expectExceptionMessage('Only draft questions can be published');
 
         $question->publish(); // 再次发布应该失败
@@ -133,7 +133,7 @@ class QuestionTest extends TestCase
     {
         $question = $this->createTestQuestion();
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(\Tourze\QuestionBankBundle\Exception\QuestionStateException::class);
         $this->expectExceptionMessage('Only published questions can be archived');
 
         $question->archive();

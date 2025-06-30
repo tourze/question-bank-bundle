@@ -290,7 +290,7 @@ class QuestionService implements QuestionServiceInterface
 
     private function createOptionFromDTO(OptionDTO $dto, int $index): Option
     {
-        $option = new Option($dto->content, $dto->isCorrect, $dto->sortOrder ?: $index);
+        $option = new Option($dto->content, $dto->isCorrect, $dto->sortOrder ?? $index);
         
         if ($dto->explanation !== null) {
             $option->setExplanation($dto->explanation);
