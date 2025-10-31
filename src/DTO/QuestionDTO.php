@@ -28,6 +28,9 @@ class QuestionDTO
 
     public ?string $explanation = null;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     public ?array $metadata = null;
 
     /**
@@ -53,7 +56,7 @@ class QuestionDTO
         $dto->title = $title;
         $dto->content = $content;
         $dto->type = $type;
-        
+
         return $dto;
     }
 }

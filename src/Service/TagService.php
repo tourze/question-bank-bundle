@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Service;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Tourze\QuestionBankBundle\DTO\TagDTO;
 use Tourze\QuestionBankBundle\Entity\Tag;
@@ -13,103 +19,104 @@ use Tourze\QuestionBankBundle\Exception\TagNotFoundException;
 use Tourze\QuestionBankBundle\Exception\ValidationException;
 use Tourze\QuestionBankBundle\Repository\TagRepository;
 
+#[Autoconfigure(public: true)]
 class TagService implements TagServiceInterface
 {
     public function __construct(
         private readonly TagRepository $tagRepository,
         private readonly ValidatorInterface $validator,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
     public function createTag(TagDTO $dto): Tag
     {
         $this->validateTagDTO($dto);
-        
+
         // 生成 slug
-        if ($dto->slug === null) {
+        if (null === $dto->slug) {
             $dto->slug = $this->generateSlug($dto->name);
         }
-        
+
         // 检查 slug 唯一性
-        if ($this->tagRepository->findBySlug($dto->slug) !== null) {
-            throw new ValidationException(
-                $this->createViolationList('slug', sprintf('Tag with slug "%s" already exists', $dto->slug))
-            );
+        if (null !== $this->tagRepository->findBySlug($dto->slug)) {
+            throw new ValidationException($this->createViolationList('slug', sprintf('Tag with slug "%s" already exists', $dto->slug)));
         }
-        
-        $tag = new Tag($dto->name, $dto->slug);
-        
-        if ($dto->description !== null) {
+
+        $tag = new Tag();
+        $tag->setName($dto->name);
+        $tag->setSlug($dto->slug);
+
+        if (null !== $dto->description) {
             $tag->setDescription($dto->description);
         }
-        
-        if ($dto->color !== null) {
+
+        if (null !== $dto->color) {
             $tag->setColor($dto->color);
         }
-        
-        $this->tagRepository->save($tag);
-        
+
+        $this->entityManager->persist($tag);
+        $this->entityManager->flush();
+
         return $tag;
     }
 
     public function updateTag(string $id, TagDTO $dto): Tag
     {
         $tag = $this->findTag($id);
-        
+
         $this->validateTagDTO($dto);
-        
+
         // 生成 slug
-        if ($dto->slug === null) {
+        if (null === $dto->slug) {
             $dto->slug = $this->generateSlug($dto->name);
         }
-        
+
         // 检查 slug 唯一性（排除自身）
         $existingTag = $this->tagRepository->findBySlug($dto->slug);
-        if ($existingTag !== null && (string) $existingTag->getId() !== $id) {
-            throw new ValidationException(
-                $this->createViolationList('slug', sprintf('Tag with slug "%s" already exists', $dto->slug))
-            );
+        if (null !== $existingTag && $existingTag->getId() !== $id) {
+            throw new ValidationException($this->createViolationList('slug', sprintf('Tag with slug "%s" already exists', $dto->slug)));
         }
-        
-        $tag->setName($dto->name)
-            ->setSlug($dto->slug);
-        
-        if ($dto->description !== null) {
+
+        $tag->setName($dto->name);
+        $tag->setSlug($dto->slug);
+
+        if (null !== $dto->description) {
             $tag->setDescription($dto->description);
         }
-        
-        if ($dto->color !== null) {
+
+        if (null !== $dto->color) {
             $tag->setColor($dto->color);
         }
-        
-        $this->tagRepository->save($tag);
-        
+
+        $this->entityManager->persist($tag);
+        $this->entityManager->flush();
+
         return $tag;
     }
 
     public function deleteTag(string $id): void
     {
         $tag = $this->findTag($id);
-        
+
         // 检查是否被使用
         if ($tag->getUsageCount() > 0) {
-            throw new ValidationException(
-                $this->createViolationList('usage', sprintf('Tag is used by %d questions', $tag->getUsageCount()))
-            );
+            throw new ValidationException($this->createViolationList('usage', sprintf('Tag is used by %d questions', $tag->getUsageCount())));
         }
-        
-        $this->tagRepository->remove($tag);
+
+        $this->entityManager->remove($tag);
+        $this->entityManager->flush();
     }
 
     public function findTag(string $id): Tag
     {
         $tag = $this->tagRepository->find($id);
-        
-        if ($tag === null) {
+
+        if (null === $tag) {
             throw TagNotFoundException::withId($id);
         }
-        
+
         return $tag;
     }
 
@@ -117,13 +124,13 @@ class TagService implements TagServiceInterface
     {
         // 先按名称查找
         $tags = $this->tagRepository->findByNames([$name]);
-        if (!empty($tags)) {
+        if (count($tags) > 0) {
             return $tags[0];
         }
-        
+
         // 创建新标签
         $dto = TagDTO::create($name);
-        
+
         return $this->createTag($dto);
     }
 
@@ -135,26 +142,25 @@ class TagService implements TagServiceInterface
     public function mergeTag(string $sourceId, string $targetId): void
     {
         if ($sourceId === $targetId) {
-            throw new ValidationException(
-                $this->createViolationList('target', 'Cannot merge tag with itself')
-            );
+            throw new ValidationException($this->createViolationList('target', 'Cannot merge tag with itself'));
         }
-        
+
         $sourceTag = $this->findTag($sourceId);
         $targetTag = $this->findTag($targetId);
-        
+
         // 将源标签的所有题目转移到目标标签
         foreach ($sourceTag->getQuestions() as $question) {
             $question->removeTag($sourceTag);
             $question->addTag($targetTag);
         }
-        
+
         // 删除源标签
-        $this->tagRepository->remove($sourceTag);
-        
+        $this->entityManager->remove($sourceTag);
+        $this->entityManager->flush();
+
         $this->eventDispatcher->dispatch(new TagMergedEvent(
-            \Symfony\Component\Uid\Uuid::fromString($sourceId),
-            \Symfony\Component\Uid\Uuid::fromString($targetId),
+            Uuid::fromString($sourceId),
+            Uuid::fromString($targetId),
             [] // affected questions - would need to be calculated
         ));
     }
@@ -172,16 +178,16 @@ class TagService implements TagServiceInterface
     private function validateTagDTO(TagDTO $dto): void
     {
         $violations = $this->validator->validate($dto);
-        
+
         if (count($violations) > 0) {
             throw new ValidationException($violations);
         }
     }
 
-    private function createViolationList(string $property, string $message): \Symfony\Component\Validator\ConstraintViolationListInterface
+    private function createViolationList(string $property, string $message): ConstraintViolationListInterface
     {
-        $violationList = new \Symfony\Component\Validator\ConstraintViolationList();
-        $violation = new \Symfony\Component\Validator\ConstraintViolation(
+        $violationList = new ConstraintViolationList();
+        $violation = new ConstraintViolation(
             $message,
             null,
             [],
@@ -190,7 +196,7 @@ class TagService implements TagServiceInterface
             null
         );
         $violationList->add($violation);
-        
+
         return $violationList;
     }
 
@@ -199,7 +205,7 @@ class TagService implements TagServiceInterface
         $slug = strtolower($text);
         $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug) ?? '';
         $slug = preg_replace('/[\s]+/', '-', $slug) ?? '';
-        $slug = trim($slug, '-');
-        return $slug;
+
+        return trim($slug, '-');
     }
 }

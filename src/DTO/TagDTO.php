@@ -25,7 +25,7 @@ class TagDTO
     {
         $dto = new self();
         $dto->name = $name;
-        
+
         return $dto;
     }
 }

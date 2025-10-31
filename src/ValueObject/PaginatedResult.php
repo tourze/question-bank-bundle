@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\ValueObject;
 
-use ArrayIterator;
-use Countable;
-use IteratorAggregate;
-use Traversable;
-
 /**
  * @template T
- * @implements IteratorAggregate<int, T>
+ *
+ * @implements \IteratorAggregate<int, T>
  */
-final class PaginatedResult implements IteratorAggregate, Countable
+final class PaginatedResult implements \IteratorAggregate, \Countable
 {
     /**
      * @param array<T> $items
@@ -22,7 +18,7 @@ final class PaginatedResult implements IteratorAggregate, Countable
         private readonly array $items,
         private readonly int $total,
         private readonly int $page,
-        private readonly int $limit
+        private readonly int $limit,
     ) {
     }
 
@@ -66,28 +62,28 @@ final class PaginatedResult implements IteratorAggregate, Countable
 
     public function getFirstItem(): int
     {
-        if ($this->total === 0) {
+        if (0 === $this->total) {
             return 0;
         }
-        
+
         return ($this->page - 1) * $this->limit + 1;
     }
 
     public function getLastItem(): int
     {
-        if ($this->total === 0) {
+        if (0 === $this->total) {
             return 0;
         }
-        
+
         return min($this->page * $this->limit, $this->total);
     }
 
     /**
-     * @return Traversable<int, T>
+     * @return \Traversable<int, T>
      */
-    public function getIterator(): Traversable
+    public function getIterator(): \Traversable
     {
-        return new ArrayIterator($this->items);
+        return new \ArrayIterator($this->items);
     }
 
     public function count(): int
@@ -97,7 +93,7 @@ final class PaginatedResult implements IteratorAggregate, Countable
 
     public function isEmpty(): bool
     {
-        return empty($this->items);
+        return 0 === count($this->items);
     }
 
     public function getOffset(): int
@@ -107,7 +103,7 @@ final class PaginatedResult implements IteratorAggregate, Countable
 
     public function isFirstPage(): bool
     {
-        return $this->page === 1;
+        return 1 === $this->page;
     }
 
     public function isLastPage(): bool

@@ -6,28 +6,18 @@ namespace Tourze\QuestionBankBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 use Tourze\QuestionBankBundle\Entity\Tag;
 
 /**
  * @extends ServiceEntityRepository<Tag>
  */
+#[AsRepository(entityClass: Tag::class)]
 class TagRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Tag::class);
-    }
-
-    public function save(Tag $tag): void
-    {
-        $this->getEntityManager()->persist($tag);
-        $this->getEntityManager()->flush();
-    }
-
-    public function remove(Tag $tag): void
-    {
-        $this->getEntityManager()->remove($tag);
-        $this->getEntityManager()->flush();
     }
 
     public function findBySlug(string $slug): ?Tag
@@ -36,7 +26,8 @@ class TagRepository extends ServiceEntityRepository
             ->andWhere('t.slug = :slug')
             ->setParameter('slug', $slug)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getOneOrNullResult()
+        ;
     }
 
     /**
@@ -48,16 +39,18 @@ class TagRepository extends ServiceEntityRepository
             ->orderBy('t.usageCount', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
     }
 
     /**
      * @param array<string> $names
+     *
      * @return array<Tag>
      */
     public function findByNames(array $names): array
     {
-        if (empty($names)) {
+        if (0 === count($names)) {
             return [];
         }
 
@@ -65,11 +58,13 @@ class TagRepository extends ServiceEntityRepository
             ->andWhere('t.name IN (:names)')
             ->setParameter('names', $names)
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
     }
 
     /**
      * 搜索标签
+     *
      * @return array<Tag>
      */
     public function search(string $keyword, int $limit = 10): array
@@ -80,6 +75,25 @@ class TagRepository extends ServiceEntityRepository
             ->orderBy('t.usageCount', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+    }
+
+    public function save(Tag $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(Tag $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

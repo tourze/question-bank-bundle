@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Event;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitSymfonyUnitTest\AbstractEventTestCase;
 use Tourze\QuestionBankBundle\Entity\Question;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
 use Tourze\QuestionBankBundle\Event\QuestionUpdatedEvent;
 use Tourze\QuestionBankBundle\ValueObject\Difficulty;
 
-class QuestionUpdatedEventTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(QuestionUpdatedEvent::class)]
+final class QuestionUpdatedEventTest extends AbstractEventTestCase
 {
-    public function test_constructor_setsQuestion(): void
+    public function testConstructorSetsQuestion(): void
     {
         // Arrange
         $question = $this->createQuestion();
@@ -27,15 +32,16 @@ class QuestionUpdatedEventTest extends TestCase
 
     private function createQuestion(string $title = 'Test Question'): Question
     {
-        return new Question(
-            $title,
-            'Test content',
-            QuestionType::SINGLE_CHOICE,
-            new Difficulty(3)
-        );
+        $question = new Question();
+        $question->setTitle($title);
+        $question->setContent('Test content');
+        $question->setType(QuestionType::SINGLE_CHOICE);
+        $question->setDifficulty(new Difficulty(3));
+
+        return $question;
     }
 
-    public function test_getQuestion_returnsCorrectQuestion(): void
+    public function testGetQuestionReturnsCorrectQuestion(): void
     {
         // Arrange
         $question1 = $this->createQuestion('Question 1');
@@ -50,7 +56,7 @@ class QuestionUpdatedEventTest extends TestCase
         $this->assertNotSame($event1->getQuestion(), $event2->getQuestion());
     }
 
-    public function test_event_carriesQuestionData(): void
+    public function testEventCarriesQuestionData(): void
     {
         // Arrange
         $question = $this->createQuestion('Updated Question');
@@ -66,26 +72,26 @@ class QuestionUpdatedEventTest extends TestCase
         $this->assertEquals('Test explanation', $event->getQuestion()->getExplanation());
     }
 
-    public function test_multipleEvents_withDifferentQuestions(): void
+    public function testMultipleEventsWithDifferentQuestions(): void
     {
         // Arrange
         $questions = [];
         $events = [];
 
-        for ($i = 1; $i <= 3; $i++) {
+        for ($i = 1; $i <= 3; ++$i) {
             $question = $this->createQuestion("Question {$i}");
             $questions[] = $question;
             $events[] = new QuestionUpdatedEvent($question);
         }
 
         // Act & Assert
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; $i < 3; ++$i) {
             $this->assertEquals($questions[$i], $events[$i]->getQuestion());
-            $this->assertEquals("Question " . ($i + 1), $events[$i]->getQuestion()->getTitle());
+            $this->assertEquals('Question ' . ($i + 1), $events[$i]->getQuestion()->getTitle());
         }
     }
 
-    public function test_event_withPublishedQuestion(): void
+    public function testEventWithPublishedQuestion(): void
     {
         // Arrange
         $question = $this->createQuestion('Published Question');

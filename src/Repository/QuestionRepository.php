@@ -9,6 +9,7 @@ use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 use Tourze\QuestionBankBundle\DTO\SearchCriteria;
 use Tourze\QuestionBankBundle\Entity\Category;
 use Tourze\QuestionBankBundle\Entity\Question;
@@ -18,49 +19,46 @@ use Tourze\QuestionBankBundle\ValueObject\PaginatedResult;
 /**
  * @extends ServiceEntityRepository<Question>
  */
-class QuestionRepository extends ServiceEntityRepository implements QuestionRepositoryInterface
+#[AsRepository(entityClass: Question::class)]
+class QuestionRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Question::class);
     }
 
-    public function save(Question $question, bool $flush = true): void
-    {
-        $this->getEntityManager()->persist($question);
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(Question $question): void
-    {
-        $this->getEntityManager()->remove($question);
-        $this->getEntityManager()->flush();
-    }
-
-    public function find($id, LockMode|int|null $lockMode = null, $lockVersion = null): ?Question
+    public function find($id, LockMode|int|null $lockMode = null, ?int $lockVersion = null): ?Question
     {
         return parent::find($id, $lockMode, $lockVersion);
     }
 
+    /**
+     * @return array<int, Question>
+     */
     public function findByCategory(Category $category): array
     {
+        /** @var array<int, Question> */
         return $this->createQueryBuilder('q')
             ->innerJoin('q.categories', 'c')
             ->andWhere('c = :category')
             ->setParameter('category', $category)
             ->orderBy('q.createTime', 'DESC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
     }
 
+    /**
+     * @param array<int, string> $tagIds
+     * @return array<int, Question>
+     */
     public function findByTags(array $tagIds): array
     {
-        if (empty($tagIds)) {
+        if (0 === count($tagIds)) {
             return [];
         }
 
+        /** @var array<int, Question> */
         return $this->createQueryBuilder('q')
             ->innerJoin('q.tags', 't')
             ->andWhere('t.id IN (:tagIds)')
@@ -70,16 +68,20 @@ class QuestionRepository extends ServiceEntityRepository implements QuestionRepo
             ->setParameter('tagCount', count($tagIds))
             ->orderBy('q.createTime', 'DESC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
     }
 
+    /**
+     * @return PaginatedResult<Question>
+     */
     public function search(SearchCriteria $criteria): PaginatedResult
     {
         $qb = $this->createSearchQueryBuilder($criteria);
-        
+
         $paginator = new Paginator($qb->getQuery());
         $paginator->setUseOutputWalkers(false);
-        
+
         return new PaginatedResult(
             items: iterator_to_array($paginator),
             total: count($paginator),
@@ -88,13 +90,17 @@ class QuestionRepository extends ServiceEntityRepository implements QuestionRepo
         );
     }
 
+    /**
+     * @return array<string, int>
+     */
     public function countByType(): array
     {
         $result = $this->createQueryBuilder('q')
             ->select('q.type AS type', 'COUNT(q.id) AS count')
             ->groupBy('q.type')
             ->getQuery()
-            ->getArrayResult();
+            ->getArrayResult()
+        ;
 
         $counts = [];
         foreach ($result as $row) {
@@ -104,36 +110,42 @@ class QuestionRepository extends ServiceEntityRepository implements QuestionRepo
         return $counts;
     }
 
+    /**
+     * @param array<int, string> $ids
+     * @return array<int, Question>
+     */
     public function findByIds(array $ids): array
     {
-        if (empty($ids)) {
+        if (0 === count($ids)) {
             return [];
         }
 
-        // 将 UUID 对象转换为字符串
-        $stringIds = array_map(fn($id) => (string) $id, $ids);
-        
         return $this->createQueryBuilder('q')
             ->andWhere('q.id IN (:ids)')
-            ->setParameter('ids', $stringIds)
+            ->setParameter('ids', $ids)
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
     }
 
+    /**
+     * @return array<int, Question>
+     */
     public function findRandom(int $limit, ?SearchCriteria $criteria = null): array
     {
-        $qb = $criteria !== null ? $this->createSearchQueryBuilder($criteria) : $this->createQueryBuilder('q');
-        
+        $qb = null !== $criteria ? $this->createSearchQueryBuilder($criteria) : $this->createQueryBuilder('q');
+
         // 先获取所有符合条件的记录，然后在PHP中随机化
         $allResults = $qb->getQuery()->getResult();
-        
+
         // 如果结果数量少于或等于限制，直接返回
         if (count($allResults) <= $limit) {
             return $allResults;
         }
-        
+
         // 随机打乱并返回指定数量
         shuffle($allResults);
+
         return array_slice($allResults, 0, $limit);
     }
 
@@ -141,68 +153,136 @@ class QuestionRepository extends ServiceEntityRepository implements QuestionRepo
     {
         $qb = $this->createQueryBuilder('q');
 
-        // 关键词搜索
-        if (!empty($criteria->getKeyword())) {
-            $qb->andWhere('(q.title LIKE :keyword OR q.content LIKE :keyword)')
-                ->setParameter('keyword', '%' . $criteria->getKeyword() . '%');
+        $this->applyKeywordFilter($qb, $criteria);
+        $this->applyTypeFilter($qb, $criteria);
+        $this->applyStatusFilter($qb, $criteria);
+        $this->applyDifficultyFilter($qb, $criteria);
+        $this->applyCategoryFilter($qb, $criteria);
+        $this->applyTagFilter($qb, $criteria);
+        $this->applyOrderBy($qb, $criteria);
+        $this->applyPagination($qb, $criteria);
+
+        return $qb;
+    }
+
+    private function applyKeywordFilter(QueryBuilder $qb, SearchCriteria $criteria): void
+    {
+        if (null === $criteria->getKeyword() || '' === $criteria->getKeyword()) {
+            return;
         }
 
-        // 题型过滤
-        if (!empty($criteria->getTypes())) {
-            $qb->andWhere('q.type IN (:types)')
-                ->setParameter('types', $criteria->getTypes());
+        $qb->andWhere('(q.title LIKE :keyword OR q.content LIKE :keyword)')
+            ->setParameter('keyword', '%' . $criteria->getKeyword() . '%')
+        ;
+    }
+
+    private function applyTypeFilter(QueryBuilder $qb, SearchCriteria $criteria): void
+    {
+        if (0 === count($criteria->getTypes())) {
+            return;
         }
 
-        // 状态过滤
-        if (!empty($criteria->getStatuses())) {
+        $qb->andWhere('q.type IN (:types)')
+            ->setParameter('types', $criteria->getTypes())
+        ;
+    }
+
+    private function applyStatusFilter(QueryBuilder $qb, SearchCriteria $criteria): void
+    {
+        if (count($criteria->getStatuses()) > 0) {
             $qb->andWhere('q.status IN (:statuses)')
-                ->setParameter('statuses', $criteria->getStatuses());
-        } elseif (!$criteria->includeArchived()) {
+                ->setParameter('statuses', $criteria->getStatuses())
+            ;
+
+            return;
+        }
+
+        if (!$criteria->includeArchived()) {
             $qb->andWhere('q.status != :archived')
-                ->setParameter('archived', QuestionStatus::ARCHIVED);
+                ->setParameter('archived', QuestionStatus::ARCHIVED)
+            ;
         }
+    }
 
-        // 难度范围过滤
-        if ($criteria->getMinDifficulty() !== null) {
+    private function applyDifficultyFilter(QueryBuilder $qb, SearchCriteria $criteria): void
+    {
+        if (null !== $criteria->getMinDifficulty()) {
             $qb->andWhere('q.difficulty >= :minDifficulty')
-                ->setParameter('minDifficulty', $criteria->getMinDifficulty());
+                ->setParameter('minDifficulty', $criteria->getMinDifficulty())
+            ;
         }
-        if ($criteria->getMaxDifficulty() !== null) {
+
+        if (null !== $criteria->getMaxDifficulty()) {
             $qb->andWhere('q.difficulty <= :maxDifficulty')
-                ->setParameter('maxDifficulty', $criteria->getMaxDifficulty());
+                ->setParameter('maxDifficulty', $criteria->getMaxDifficulty())
+            ;
+        }
+    }
+
+    private function applyCategoryFilter(QueryBuilder $qb, SearchCriteria $criteria): void
+    {
+        if (0 === count($criteria->getCategoryIds())) {
+            return;
         }
 
-        // 分类过滤
-        if (!empty($criteria->getCategoryIds())) {
-            $qb->innerJoin('q.categories', 'c')
-                ->andWhere('c.id IN (:categoryIds)')
-                ->setParameter('categoryIds', $criteria->getCategoryIds());
+        $qb->innerJoin('q.categories', 'c')
+            ->andWhere('c.id IN (:categoryIds)')
+            ->setParameter('categoryIds', $criteria->getCategoryIds())
+        ;
+    }
+
+    private function applyTagFilter(QueryBuilder $qb, SearchCriteria $criteria): void
+    {
+        if (0 === count($criteria->getTagIds())) {
+            return;
         }
 
-        // 标签过滤
-        if (!empty($criteria->getTagIds())) {
-            $qb->innerJoin('q.tags', 't')
-                ->andWhere('t.id IN (:tagIds)')
-                ->setParameter('tagIds', $criteria->getTagIds());
-            
-            if ($criteria->requireAllTags()) {
-                $qb->groupBy('q.id')
-                    ->having('COUNT(DISTINCT t.id) = :tagCount')
-                    ->setParameter('tagCount', count($criteria->getTagIds()));
-            }
-        }
+        $qb->innerJoin('q.tags', 't')
+            ->andWhere('t.id IN (:tagIds)')
+            ->setParameter('tagIds', $criteria->getTagIds())
+        ;
 
-        // 排序
+        if ($criteria->requireAllTags()) {
+            $qb->groupBy('q.id')
+                ->having('COUNT(DISTINCT t.id) = :tagCount')
+                ->setParameter('tagCount', count($criteria->getTagIds()))
+            ;
+        }
+    }
+
+    private function applyOrderBy(QueryBuilder $qb, SearchCriteria $criteria): void
+    {
         foreach ($criteria->getOrderBy() as $field => $direction) {
             $qb->addOrderBy('q.' . $field, $direction);
         }
+    }
 
-        // 分页
-        if ($criteria->getLimit() > 0) {
-            $qb->setMaxResults($criteria->getLimit())
-                ->setFirstResult(($criteria->getPage() - 1) * $criteria->getLimit());
+    private function applyPagination(QueryBuilder $qb, SearchCriteria $criteria): void
+    {
+        if ($criteria->getLimit() <= 0) {
+            return;
         }
 
-        return $qb;
+        $qb->setMaxResults($criteria->getLimit())
+            ->setFirstResult(($criteria->getPage() - 1) * $criteria->getLimit())
+        ;
+    }
+
+    public function save(Question $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(Question $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

@@ -9,7 +9,7 @@ use Tourze\QuestionBankBundle\Entity\Question;
 class QuestionUpdatedEvent extends QuestionBankEvent
 {
     public function __construct(
-        private readonly Question $question
+        private readonly Question $question,
     ) {
     }
 

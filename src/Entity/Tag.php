@@ -10,9 +10,9 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
@@ -26,26 +26,37 @@ class Tag implements \Stringable
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: 'uuid', unique: true, options: ['comment' => '标签ID'])]
-    private Uuid $id;
+    #[ORM\Column(type: Types::STRING, length: 36, unique: true, options: ['comment' => '标签ID'])]
+    #[ORM\CustomIdGenerator]
+    #[Assert\Length(max: 36)]
+    private string $id;
 
     #[TrackColumn]
     #[ORM\Column(type: Types::STRING, length: 50, options: ['comment' => '标签名称'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     private string $name;
 
     #[ORM\Column(type: Types::STRING, length: 50, unique: true, options: ['comment' => '标签别名（URL友好）'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     private string $slug;
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '标签描述'])]
+    #[Assert\Length(max: 65535)]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::STRING, length: 7, nullable: true, options: ['comment' => '标签颜色（十六进制）'])]
+    #[Assert\Length(max: 7)]
+    #[Assert\Regex(pattern: '/^#[0-9A-Fa-f]{6}$/', message: '颜色格式必须为十六进制（如 #FFFFFF）')]
     private ?string $color = null;
 
     #[IndexColumn]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '使用次数统计'])]
+    #[Assert\PositiveOrZero]
     private int $usageCount = 0;
 
     /**
@@ -55,28 +66,18 @@ class Tag implements \Stringable
     private Collection $questions;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
+    #[Assert\Type(type: 'bool')]
     private bool $valid = true;
 
-
-    #[CreateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
-    private ?string $updatedFromIp = null;
-
-    public function __construct(string $name, ?string $slug = null)
+    public function __construct()
     {
-        $this->id = Uuid::v7();
-        $this->name = $name;
-        $this->slug = $slug ?? $this->generateSlug($name);
+        $this->id = Uuid::v7()->toRfc4122();
         $this->questions = new ArrayCollection();
         $this->createTime = new \DateTimeImmutable();
         $this->updateTime = new \DateTimeImmutable();
     }
 
-    public function getId(): Uuid
+    public function getId(): string
     {
         return $this->id;
     }
@@ -86,10 +87,9 @@ class Tag implements \Stringable
         return $this->name;
     }
 
-    public function setName(string $name): self
+    public function setName(string $name): void
     {
         $this->name = $name;
-        return $this;
     }
 
     public function getSlug(): string
@@ -97,10 +97,9 @@ class Tag implements \Stringable
         return $this->slug;
     }
 
-    public function setSlug(string $slug): self
+    public function setSlug(string $slug): void
     {
         $this->slug = $slug;
-        return $this;
     }
 
     public function getDescription(): ?string
@@ -108,10 +107,9 @@ class Tag implements \Stringable
         return $this->description;
     }
 
-    public function setDescription(?string $description): self
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
-        return $this;
     }
 
     public function getColor(): ?string
@@ -119,14 +117,13 @@ class Tag implements \Stringable
         return $this->color;
     }
 
-    public function setColor(?string $color): self
+    public function setColor(?string $color): void
     {
-        if ($color !== null && !preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+        if (null !== $color && 1 !== preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
             throw new TagValidationException('Color must be a valid hex color (e.g., #FF0000)');
         }
 
         $this->color = $color;
-        return $this;
     }
 
     public function getUsageCount(): int
@@ -136,15 +133,17 @@ class Tag implements \Stringable
 
     public function incrementUsageCount(): self
     {
-        $this->usageCount++;
+        ++$this->usageCount;
+
         return $this;
     }
 
     public function decrementUsageCount(): self
     {
         if ($this->usageCount > 0) {
-            $this->usageCount--;
+            --$this->usageCount;
         }
+
         return $this;
     }
 
@@ -161,46 +160,13 @@ class Tag implements \Stringable
         return $this->valid;
     }
 
-    public function setValid(bool $valid): self
+    public function setValid(bool $valid): void
     {
         $this->valid = $valid;
-        return $this;
-    }
-
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-        return $this;
     }
 
     public function __toString(): string
     {
         return $this->name;
-    }
-
-    private function generateSlug(string $text): string
-    {
-        $slug = strtolower($text);
-        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
-        $slug = preg_replace('/[\s]+/', '-', $slug);
-        $slug = trim($slug, '-');
-        return $slug;
     }
 }

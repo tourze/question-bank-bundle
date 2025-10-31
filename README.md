@@ -1,25 +1,68 @@
 # QuestionBankBundle
 
-一个专注于题库管理的 Symfony Bundle，提供题目的存储、组织、检索等核心功能。
+[![PHP 8.1+](https://img.shields.io/badge/php-8.1%2B-blue.svg)](https://www.php.net)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/php-monorepo/ci.yml?branch=master)](https://github.com/your-org/php-monorepo/actions)
+[![Coverage Status](https://img.shields.io/codecov/c/github/your-org/php-monorepo.svg)](https://codecov.io/gh/your-org/php-monorepo)
 
-## 特性
+[English](README.md) | [中文](README.zh-CN.md)
 
-- 🎯 **专注题库管理** - 只关注题目本身，不涉及考试、练习等业务逻辑
-- 📝 **多种题型支持** - 单选、多选、判断、填空、简答
-- 🏷️ **灵活的组织方式** - 支持多分类和标签系统
-- 🔍 **强大的搜索功能** - 支持多条件组合搜索
-- 📊 **状态管理** - 草稿、已发布、已归档三种状态
-- 🔒 **数据验证** - 完整的数据验证和业务规则检查
+A Symfony Bundle focused on question bank management, providing core functionality for storing, organizing, and retrieving questions.
 
-## 安装
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Dependencies](#dependencies)
+- [Configuration](#configuration)
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+- [Entity Structure](#entity-structure)
+- [Advanced Usage](#advanced-usage)
+- [Best Practices](#best-practices)
+- [Testing](#testing)
+- [Development](#development)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+- 🎯 **Focused on Question Management** - Only concerns questions themselves, no exam or practice business logic
+- 📝 **Multiple Question Types** - Single choice, multiple choice, true/false, fill-in-the-blank, short answer
+- 🏷️ **Flexible Organization** - Multi-category and tag system support
+- 🔍 **Powerful Search** - Multi-criteria combined search support
+- 📊 **Status Management** - Draft, published, archived states
+- 🔒 **Data Validation** - Complete data validation and business rule checking
+
+## Installation
 
 ```bash
 composer require tourze/question-bank-bundle
 ```
 
-## 配置
+## Dependencies
 
-在 `config/bundles.php` 中注册 Bundle：
+This package depends on the following core components:
+
+### System Requirements
+- **PHP**: 8.1 or higher
+- **Symfony**: 6.4 or higher
+- **Doctrine ORM**: 3.0 or higher
+
+### Bundle Dependencies
+- `doctrine/doctrine-bundle`
+- `symfony/framework-bundle`
+- `symfony/validator`
+- `tourze/doctrine-timestamp-bundle`
+- `tourze/doctrine-track-bundle`
+- `tourze/doctrine-user-bundle`
+
+## Configuration
+
+### Bundle Registration
+
+Register the bundle in `config/bundles.php`:
 
 ```php
 return [
@@ -28,29 +71,27 @@ return [
 ];
 ```
 
-通过环境变量配置（在 `.env` 文件中）：
+### Environment Configuration
+
+Configure in `.env` file:
 
 ```bash
-# 题目配置
-QUESTION_BANK_MAX_OPTIONS=10              # 最大选项数（默认：10）
-QUESTION_BANK_MAX_CONTENT_LENGTH=5000     # 最大内容长度（默认：5000）
+# Question Configuration
+QUESTION_BANK_MAX_OPTIONS=10              # Max options count (default: 10)
+QUESTION_BANK_MAX_CONTENT_LENGTH=5000     # Max content length (default: 5000)
 
-# 分类配置
-QUESTION_BANK_CATEGORY_MAX_DEPTH=5        # 最大层级深度（默认：5）
-QUESTION_BANK_CATEGORY_CACHE_TTL=3600     # 缓存时间（秒）（默认：3600）
+# Category Configuration
+QUESTION_BANK_CATEGORY_MAX_DEPTH=5        # Max hierarchy depth (default: 5)
+QUESTION_BANK_CATEGORY_CACHE_TTL=3600     # Cache TTL in seconds (default: 3600)
 
-# 标签配置
-QUESTION_BANK_TAG_MAX_PER_QUESTION=10     # 每题最大标签数（默认：10）
-QUESTION_BANK_TAG_AUTO_SLUG=true          # 自动生成 slug（默认：true）
-
-# 搜索配置
-QUESTION_BANK_SEARCH_ENGINE=database      # 搜索引擎（默认：database）
-QUESTION_BANK_SEARCH_MIN_QUERY_LENGTH=2   # 最小查询长度（默认：2）
+# Tag Configuration
+QUESTION_BANK_TAG_MAX_PER_QUESTION=10     # Max tags per question (default: 10)
+QUESTION_BANK_TAG_AUTO_SLUG=true          # Auto generate slug (default: true)
 ```
 
-## 使用示例
+## Quick Start
 
-### 创建题目
+### Creating Questions
 
 ```php
 use Tourze\QuestionBankBundle\DTO\QuestionDTO;
@@ -58,16 +99,15 @@ use Tourze\QuestionBankBundle\DTO\OptionDTO;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
 use Tourze\QuestionBankBundle\Service\QuestionServiceInterface;
 
-// 创建题目 DTO
+// Create question
 $questionDTO = new QuestionDTO();
-$questionDTO->title = '以下哪个是 PHP 的超全局变量？';
-$questionDTO->content = '请选择正确答案';
+$questionDTO->title = 'Which of the following is a PHP superglobal variable?';
+$questionDTO->content = 'Please select the correct answer';
 $questionDTO->type = QuestionType::SINGLE_CHOICE;
 $questionDTO->difficulty = 2;
 $questionDTO->score = 10.0;
-$questionDTO->explanation = '$_GET 是 PHP 的超全局变量，可以在脚本的任何地方访问';
 
-// 添加选项
+// Add options
 $questionDTO->options = [
     OptionDTO::create('$_GET', true),
     OptionDTO::create('$get', false),
@@ -75,11 +115,11 @@ $questionDTO->options = [
     OptionDTO::create('$_get', false),
 ];
 
-// 创建题目
+// Save question
 $question = $questionService->createQuestion($questionDTO);
 ```
 
-### 搜索题目
+### Searching Questions
 
 ```php
 use Tourze\QuestionBankBundle\DTO\SearchCriteria;
@@ -87,147 +127,226 @@ use Tourze\QuestionBankBundle\Enum\QuestionType;
 
 $criteria = new SearchCriteria();
 $criteria->setKeyword('PHP')
-    ->setTypes([QuestionType::SINGLE_CHOICE, QuestionType::MULTIPLE_CHOICE])
+    ->setTypes([QuestionType::SINGLE_CHOICE])
     ->setMinDifficulty(1)
     ->setMaxDifficulty(3)
-    ->setLimit(20)
-    ->setPage(1);
+    ->setLimit(20);
 
 $result = $questionService->searchQuestions($criteria);
-
-foreach ($result->getItems() as $question) {
-    echo $question->getTitle() . "\n";
-}
 ```
 
-### 分类管理
+### Category Management
 
 ```php
 use Tourze\QuestionBankBundle\DTO\CategoryDTO;
 use Tourze\QuestionBankBundle\Service\CategoryServiceInterface;
 
-// 创建根分类
-$programmingDTO = CategoryDTO::create('编程语言', 'programming');
-$programming = $categoryService->createCategory($programmingDTO);
+// Create category
+$categoryDTO = CategoryDTO::create('Programming Languages', 'programming');
+$category = $categoryService->createCategory($categoryDTO);
 
-// 创建子分类
+// Create subcategory
 $phpDTO = CategoryDTO::create('PHP', 'php');
-$phpDTO->parentId = $programming->getId()->toString();
+$phpDTO->parentId = $category->getId()->toString();
 $php = $categoryService->createCategory($phpDTO);
-
-// 获取分类树
-$tree = $categoryService->getCategoryTree();
 ```
 
-### 标签管理
+## Core Concepts
+
+### Question Types
+
+- **Single Choice** (`SINGLE_CHOICE`) - Only one correct answer
+- **Multiple Choice** (`MULTIPLE_CHOICE`) - Can have multiple correct answers
+- **True/False** (`TRUE_FALSE`) - Only true/false options
+- **Fill in the Blank** (`FILL_IN_THE_BLANK`) - Requires text input
+- **Short Answer** (`SHORT_ANSWER`) - Open-ended response
+
+### Question Status
+
+- **Draft** (`DRAFT`) - Question is being edited
+- **Published** (`PUBLISHED`) - Question is ready for use
+- **Archived** (`ARCHIVED`) - Question is disabled
+
+### Difficulty Levels
+
+Question difficulty ranges from 1-5:
+- Level 1: Very Easy
+- Level 2: Easy
+- Level 3: Medium
+- Level 4: Hard
+- Level 5: Very Hard
+
+## Entity Structure
+
+### Question
+- `id`: Unique identifier
+- `title`: Question title
+- `content`: Question content
+- `type`: Question type
+- `difficulty`: Difficulty level
+- `score`: Default score
+- `explanation`: Answer explanation
+- `status`: Publication status
+
+### Option
+- `id`: Unique identifier
+- `content`: Option content
+- `isCorrect`: Whether it's a correct answer
+- `sortOrder`: Sort order
+
+### Category
+- `id`: Unique identifier
+- `name`: Category name
+- `code`: Category code
+- `parent`: Parent category
+- `level`: Hierarchy level
+- `path`: Full path
+
+### Tag
+- `id`: Unique identifier
+- `name`: Tag name
+- `slug`: Tag alias
+- `color`: Tag color
+- `usageCount`: Usage count
+
+## Advanced Usage
+
+### Batch Operations and Transaction Management
 
 ```php
-use Tourze\QuestionBankBundle\Service\TagServiceInterface;
-
-// 创建或查找标签
-$tag = $tagService->findOrCreateTag('PHP基础');
-
-// 获取热门标签
-$popularTags = $tagService->getPopularTags(10);
-
-// 搜索标签
-$tags = $tagService->searchTags('PHP', 5);
-```
-
-## 实体说明
-
-### Question（题目）
-
-- `id`: UUID 主键
-- `title`: 题目标题
-- `content`: 题目内容（支持富文本）
-- `type`: 题型（枚举）
-- `difficulty`: 难度等级（1-5）
-- `score`: 默认分值
-- `explanation`: 答案解析
-- `status`: 状态（草稿、已发布、已归档）
-- `metadata`: 扩展元数据（JSON）
-- `categories`: 所属分类（多对多）
-- `tags`: 标签集合（多对多）
-
-### Option（选项）
-
-- `id`: UUID 主键
-- `content`: 选项内容
-- `isCorrect`: 是否正确答案
-- `sortOrder`: 排序顺序
-- `explanation`: 选项说明
-
-### Category（分类）
-
-- `id`: UUID 主键
-- `name`: 分类名称
-- `code`: 分类编码（唯一）
-- `parent`: 父分类
-- `level`: 层级深度
-- `path`: 完整路径
-- `questions`: 关联的题目（多对多）
-
-### Tag（标签）
-
-- `id`: UUID 主键
-- `name`: 标签名称
-- `slug`: 标签别名（唯一）
-- `color`: 标签颜色
-- `usageCount`: 使用次数
-
-## 事件
-
-Bundle 会发布以下事件，可以订阅这些事件进行扩展：
-
-- `QuestionCreatedEvent`: 题目创建后
-- `QuestionUpdatedEvent`: 题目更新后
-- `QuestionDeletedEvent`: 题目删除后
-- `CategoryReorganizedEvent`: 分类重组后
-- `TagMergedEvent`: 标签合并后
-
-## 扩展点
-
-### 自定义题目验证器
-
-```php
-use Tourze\QuestionBankBundle\Validator\QuestionValidatorInterface;
-
-class CustomQuestionValidator implements QuestionValidatorInterface
+// Batch question import example
+class QuestionBatchImporter
 {
-    public function validate(Question $question): ValidationResult
+    public function importQuestions(array $questionsData): ImportResult
     {
-        // 自定义验证逻辑
+        $result = new ImportResult();
+        
+        $this->entityManager->beginTransaction();
+        try {
+            foreach ($questionsData as $data) {
+                $dto = $this->buildQuestionDTO($data);
+                $question = $this->questionService->createQuestion($dto);
+                $result->addSuccess($question);
+            }
+            
+            $this->entityManager->commit();
+        } catch (\Exception $e) {
+            $this->entityManager->rollback();
+            $result->addError('Batch import failed', $e->getMessage());
+        }
+        
+        return $result;
     }
 }
 ```
 
-### 自定义导入格式
+### Custom Search Engine
 
 ```php
-use Tourze\QuestionBankBundle\Importer\ImporterInterface;
-
-class ExcelImporter implements ImporterInterface
+// Elasticsearch integration
+class ElasticsearchQuestionSearcher
 {
-    public function import(UploadedFile $file): ImportResult
+    public function search(SearchCriteria $criteria): PaginatedResult
     {
-        // Excel 导入逻辑
-    }
-    
-    public function supports(string $format): bool
-    {
-        return $format === 'xlsx';
+        $query = [
+            'bool' => [
+                'must' => []
+            ]
+        ];
+        
+        // Add keyword search
+        if ($criteria->getKeyword()) {
+            $query['bool']['must'][] = [
+                'multi_match' => [
+                    'query' => $criteria->getKeyword(),
+                    'fields' => ['title^2', 'content']
+                ]
+            ];
+        }
+        
+        // Add category filter
+        if ($criteria->getCategoryIds()) {
+            $query['bool']['filter'][] = [
+                'terms' => ['category_ids' => $criteria->getCategoryIds()]
+            ];
+        }
+        
+        return $this->executeSearch($query, $criteria);
     }
 }
 ```
 
-## 最佳实践
+## Best Practices
 
-1. **使用 DTO 传输数据** - 不要直接暴露实体对象
-2. **通过接口注入服务** - 便于测试和扩展
-3. **监听事件进行扩展** - 而不是修改核心代码
-4. **合理使用缓存** - 分类树和热门标签适合缓存
-5. **批量操作使用事务** - 确保数据一致性
+1. **Use DTOs for data transfer** - Avoid direct entity manipulation
+2. **Operate through service interfaces** - For better testing and extensibility
+3. **Use caching wisely** - Category trees and popular tags are good candidates
+4. **Use transactions for batch operations** - Ensure data consistency
+5. **Listen to events for extensions** - Instead of modifying core code
+
+## Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+./vendor/bin/phpunit packages/question-bank-bundle/tests
+
+# Run unit tests
+./vendor/bin/phpunit packages/question-bank-bundle/tests/Unit
+
+# Run integration tests
+./vendor/bin/phpunit packages/question-bank-bundle/tests/Integration
+```
+
+## Development
+
+### Code Quality Checks
+
+```bash
+# PHPStan static analysis
+./vendor/bin/phpstan analyse packages/question-bank-bundle
+
+# Code style check and fix
+./vendor/bin/php-cs-fixer fix packages/question-bank-bundle
+```
+
+## FAQ
+
+### Q: How to implement random question selection?
+
+A: Use the QuestionRepository's findRandom method:
+
+```php
+$randomQuestions = $questionRepository->findRandom(
+    limit: 10,
+    criteria: $searchCriteria
+);
+```
+
+### Q: How to implement question versioning?
+
+A: Listen to question update events:
+
+```php
+class QuestionVersionListener
+{
+    public function onQuestionUpdated(QuestionUpdatedEvent $event): void
+    {
+        $question = $event->getQuestion();
+        // Save historical version
+        $this->versionService->createSnapshot($question);
+    }
+}
+```
+
+## Contributing
+
+Welcome to submit Pull Requests and Issues. Please read before development:
+
+1. [Contributing Guide](CONTRIBUTING.md)
+2. [Code Style](CODE_STYLE.md)
+3. [Testing Guide](TESTING.md)
 
 ## License
 

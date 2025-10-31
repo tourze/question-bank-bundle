@@ -7,7 +7,7 @@ namespace Tourze\QuestionBankBundle\Event;
 class QuestionDeletedEvent extends QuestionBankEvent
 {
     public function __construct(
-        private readonly string $questionId
+        private readonly string $questionId,
     ) {
     }
 

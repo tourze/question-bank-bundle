@@ -4,30 +4,33 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Service;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 use Tourze\QuestionBankBundle\DTO\OptionDTO;
 use Tourze\QuestionBankBundle\DTO\QuestionDTO;
 use Tourze\QuestionBankBundle\Entity\Category;
+use Tourze\QuestionBankBundle\Entity\Question;
 use Tourze\QuestionBankBundle\Entity\Tag;
 use Tourze\QuestionBankBundle\Enum\QuestionStatus;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
 use Tourze\QuestionBankBundle\Exception\QuestionNotFoundException;
+use Tourze\QuestionBankBundle\Exception\QuestionStateException;
 use Tourze\QuestionBankBundle\Exception\ValidationException;
-use Tourze\QuestionBankBundle\Repository\CategoryRepository;
-use Tourze\QuestionBankBundle\Repository\TagRepository;
 use Tourze\QuestionBankBundle\Service\QuestionServiceInterface;
-use Tourze\QuestionBankBundle\Tests\BaseIntegrationTestCase;
 
-class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
+/**
+ * @internal
+ */
+#[CoversClass(QuestionServiceInterface::class)]
+#[RunTestsInSeparateProcesses]
+final class QuestionServiceIntegrationTest extends AbstractIntegrationTestCase
 {
-    private QuestionServiceInterface $questionService;
-    private CategoryRepository $categoryRepository;
-    private TagRepository $tagRepository;
-
-    public function test_createQuestion_withValidData_createsQuestion(): void
+    public function testCreateQuestionWithValidDataCreatesQuestion(): void
     {
         $dto = $this->createQuestionDTO();
 
-        $question = $this->questionService->createQuestion($dto);
+        $question = self::getService(QuestionServiceInterface::class)->createQuestion($dto);
 
         $this->assertNotNull($question->getId());
         $this->assertEquals('Test Question', $question->getTitle());
@@ -59,19 +62,25 @@ class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
         return $dto;
     }
 
-    public function test_createQuestion_withCategoriesAndTags_associatesCorrectly(): void
+    public function testCreateQuestionWithCategoriesAndTagsAssociatesCorrectly(): void
     {
-        $category = new Category('Test Category', 'test_category');
-        $this->categoryRepository->save($category);
-        
-        $tag = new Tag('Test Tag');
-        $this->tagRepository->save($tag);
-        
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
+        self::getEntityManager()->persist($category);
+        self::getEntityManager()->flush();
+
+        $tag = new Tag();
+        $tag->setName('Test Tag');
+        $tag->setSlug('test-tag');
+        self::getEntityManager()->persist($tag);
+        self::getEntityManager()->flush();
+
         $dto = $this->createQuestionDTO();
-        $dto->categoryIds = [(string) $category->getId()];
-        $dto->tagIds = [(string) $tag->getId()];
-        
-        $question = $this->questionService->createQuestion($dto);
+        $dto->categoryIds = [$category->getId()];
+        $dto->tagIds = [$tag->getId()];
+
+        $question = self::getService(QuestionServiceInterface::class)->createQuestion($dto);
 
         $this->assertCount(1, $question->getCategories());
         $this->assertTrue($question->getCategories()->contains($category));
@@ -80,7 +89,7 @@ class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertEquals(1, $tag->getUsageCount());
     }
 
-    public function test_createQuestion_withInvalidData_throwsValidationException(): void
+    public function testCreateQuestionWithInvalidDataThrowsValidationException(): void
     {
         $dto = new QuestionDTO();
         $dto->title = ''; // 空标题应该失败
@@ -93,22 +102,22 @@ class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
         $dto->tagIds = [];
 
         $this->expectException(ValidationException::class);
-        
-        $this->questionService->createQuestion($dto);
+
+        self::getService(QuestionServiceInterface::class)->createQuestion($dto);
     }
 
-    public function test_createQuestion_singleChoiceWithoutOptions_throwsValidationException(): void
+    public function testCreateQuestionSingleChoiceWithoutOptionsThrowsValidationException(): void
     {
         $dto = $this->createQuestionDTO();
         $dto->options = []; // 单选题需要选项
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('This question type requires options');
-        
-        $this->questionService->createQuestion($dto);
+
+        self::getService(QuestionServiceInterface::class)->createQuestion($dto);
     }
 
-    public function test_createQuestion_singleChoiceWithoutCorrectOption_throwsValidationException(): void
+    public function testCreateQuestionSingleChoiceWithoutCorrectOptionThrowsValidationException(): void
     {
         $dto = $this->createQuestionDTO();
         $dto->options = [
@@ -118,11 +127,11 @@ class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('At least one correct option required');
-        
-        $this->questionService->createQuestion($dto);
+
+        self::getService(QuestionServiceInterface::class)->createQuestion($dto);
     }
 
-    public function test_createQuestion_singleChoiceWithMultipleCorrectOptions_throwsValidationException(): void
+    public function testCreateQuestionSingleChoiceWithMultipleCorrectOptionsThrowsValidationException(): void
     {
         $dto = $this->createQuestionDTO();
         $dto->options = [
@@ -132,83 +141,84 @@ class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Single choice question can only have one correct option');
-        
-        $this->questionService->createQuestion($dto);
+
+        self::getService(QuestionServiceInterface::class)->createQuestion($dto);
     }
 
-    public function test_updateQuestion_withValidData_updatesQuestion(): void
+    public function testUpdateQuestionWithValidDataUpdatesQuestion(): void
     {
         $question = $this->createTestQuestion();
-        
+
         $dto = $this->createQuestionDTO();
         $dto->title = 'Updated Title';
         $dto->content = 'Updated Content';
         $dto->difficulty = 5;
-        
-        $updatedQuestion = $this->questionService->updateQuestion((string) $question->getId(), $dto);
+
+        $updatedQuestion = self::getService(QuestionServiceInterface::class)->updateQuestion($question->getId(), $dto);
 
         $this->assertEquals('Updated Title', $updatedQuestion->getTitle());
         $this->assertEquals('Updated Content', $updatedQuestion->getContent());
         $this->assertEquals(5, $updatedQuestion->getDifficulty()->getLevel());
     }
 
-    private function createTestQuestion(): \Tourze\QuestionBankBundle\Entity\Question
+    private function createTestQuestion(): Question
     {
         $dto = $this->createQuestionDTO();
-        return $this->questionService->createQuestion($dto);
+
+        return self::getService(QuestionServiceInterface::class)->createQuestion($dto);
     }
 
-    public function test_updateQuestion_publishedQuestion_throwsValidationException(): void
+    public function testUpdateQuestionPublishedQuestionThrowsValidationException(): void
     {
         $question = $this->createTestQuestion();
-        $this->questionService->publishQuestion((string) $question->getId());
+        self::getService(QuestionServiceInterface::class)->publishQuestion($question->getId());
 
         $dto = $this->createQuestionDTO();
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Only draft questions can be edited');
 
-        $this->questionService->updateQuestion((string) $question->getId(), $dto);
+        self::getService(QuestionServiceInterface::class)->updateQuestion($question->getId(), $dto);
     }
 
-    public function test_deleteQuestion_withValidId_deletesQuestion(): void
+    public function testDeleteQuestionWithValidIdDeletesQuestion(): void
     {
         $question = $this->createTestQuestion();
         $questionId = $question->getId();
 
-        $this->questionService->deleteQuestion((string) $questionId);
+        self::getService(QuestionServiceInterface::class)->deleteQuestion($questionId);
 
         $this->expectException(QuestionNotFoundException::class);
-        $this->questionService->findQuestion((string) $questionId);
+        self::getService(QuestionServiceInterface::class)->findQuestion($questionId);
     }
 
-    public function test_findQuestion_withValidId_returnsQuestion(): void
+    public function testFindQuestionWithValidIdReturnsQuestion(): void
     {
         $question = $this->createTestQuestion();
 
-        $foundQuestion = $this->questionService->findQuestion((string) $question->getId());
+        $foundQuestion = self::getService(QuestionServiceInterface::class)->findQuestion($question->getId());
 
         $this->assertEquals($question->getId(), $foundQuestion->getId());
         $this->assertEquals($question->getTitle(), $foundQuestion->getTitle());
     }
 
-    public function test_findQuestion_withInvalidId_throwsNotFoundException(): void
+    public function testFindQuestionWithInvalidIdThrowsNotFoundException(): void
     {
         $this->expectException(QuestionNotFoundException::class);
 
-        $this->questionService->findQuestion('00000000-0000-0000-0000-000000000000');
+        self::getService(QuestionServiceInterface::class)->findQuestion('00000000-0000-0000-0000-000000000000');
     }
 
-    public function test_publishQuestion_withValidDraftQuestion_publishesQuestion(): void
+    public function testPublishQuestionWithValidDraftQuestionPublishesQuestion(): void
     {
         $question = $this->createTestQuestion();
 
-        $publishedQuestion = $this->questionService->publishQuestion((string) $question->getId());
+        $publishedQuestion = self::getService(QuestionServiceInterface::class)->publishQuestion($question->getId());
 
         $this->assertEquals(QuestionStatus::PUBLISHED, $publishedQuestion->getStatus());
     }
 
-    public function test_publishQuestion_withoutCorrectOption_throwsValidationException(): void
+    public function testPublishQuestionWithoutCorrectOptionThrowsValidationException(): void
     {
         // 首先创建一个有正确选项的问题
         $question = $this->createTestQuestion();
@@ -217,71 +227,76 @@ class QuestionServiceIntegrationTest extends BaseIntegrationTestCase
         foreach ($question->getOptions() as $option) {
             $option->setIsCorrect(false);
         }
-        $this->entityManager->flush();
+        self::getEntityManager()->flush();
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Question must have at least one correct option');
 
-        $this->questionService->publishQuestion((string) $question->getId());
+        self::getService(QuestionServiceInterface::class)->publishQuestion($question->getId());
     }
 
-    public function test_archiveQuestion_withPublishedQuestion_archivesQuestion(): void
+    public function testArchiveQuestionWithPublishedQuestionArchivesQuestion(): void
     {
         $question = $this->createTestQuestion();
-        $this->questionService->publishQuestion((string) $question->getId());
+        self::getService(QuestionServiceInterface::class)->publishQuestion($question->getId());
 
-        $archivedQuestion = $this->questionService->archiveQuestion((string) $question->getId());
+        $archivedQuestion = self::getService(QuestionServiceInterface::class)->archiveQuestion($question->getId());
 
         $this->assertEquals(QuestionStatus::ARCHIVED, $archivedQuestion->getStatus());
     }
 
-    public function test_archiveQuestion_withDraftQuestion_throwsException(): void
+    public function testArchiveQuestionWithDraftQuestionThrowsException(): void
     {
         $question = $this->createTestQuestion();
 
-        $this->expectException(\Tourze\QuestionBankBundle\Exception\QuestionStateException::class);
+        $this->expectException(QuestionStateException::class);
         $this->expectExceptionMessage('Only published questions can be archived');
 
-        $this->questionService->archiveQuestion((string) $question->getId());
+        self::getService(QuestionServiceInterface::class)->archiveQuestion($question->getId());
     }
 
-    public function test_getRandomQuestions_returnsRequestedNumber(): void
+    public function testGetRandomQuestionsReturnsRequestedNumber(): void
     {
         $this->createMultipleTestQuestions(5);
 
-        $randomQuestions = $this->questionService->getRandomQuestions(3);
+        $randomQuestions = self::getService(QuestionServiceInterface::class)->getRandomQuestions(3);
 
         $this->assertCount(3, $randomQuestions);
         foreach ($randomQuestions as $question) {
-            $this->assertInstanceOf(\Tourze\QuestionBankBundle\Entity\Question::class, $question);
+            $this->assertInstanceOf(Question::class, $question);
         }
     }
 
+    /**
+     * @return array<Question>
+     */
     private function createMultipleTestQuestions(int $count): array
     {
         $questions = [];
-        for ($i = 0; $i < $count; $i++) {
+        for ($i = 0; $i < $count; ++$i) {
             $dto = $this->createQuestionDTO();
             $dto->title = "Test Question {$i}";
-            $questions[] = $this->questionService->createQuestion($dto);
+            $questions[] = self::getService(QuestionServiceInterface::class)->createQuestion($dto);
         }
+
         return $questions;
     }
 
-    public function test_getRandomQuestions_withMoreRequestedThanAvailable_returnsAvailable(): void
+    public function testGetRandomQuestionsWithMoreRequestedThanAvailableReturnsAvailable(): void
     {
         $this->createMultipleTestQuestions(2);
 
-        $randomQuestions = $this->questionService->getRandomQuestions(5);
+        $randomQuestions = self::getService(QuestionServiceInterface::class)->getRandomQuestions(5);
 
         $this->assertCount(2, $randomQuestions);
     }
 
-    protected function setUp(): void
+    protected function onSetUp(): void
     {
-        parent::setUp();
-        $this->questionService = $this->container->get(QuestionServiceInterface::class);
-        $this->categoryRepository = $this->container->get(CategoryRepository::class);
-        $this->tagRepository = $this->container->get(TagRepository::class);
+        // 清理测试数据，确保测试隔离
+        self::getEntityManager()->createQuery('DELETE FROM Tourze\QuestionBankBundle\Entity\Option o')->execute();
+        self::getEntityManager()->createQuery('DELETE FROM Tourze\QuestionBankBundle\Entity\Question q')->execute();
+        self::getEntityManager()->createQuery('DELETE FROM Tourze\QuestionBankBundle\Entity\Category c')->execute();
+        self::getEntityManager()->createQuery('DELETE FROM Tourze\QuestionBankBundle\Entity\Tag t')->execute();
     }
 }

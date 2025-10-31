@@ -9,7 +9,7 @@ use Tourze\QuestionBankBundle\Entity\Category;
 class CategoryCreatedEvent extends QuestionBankEvent
 {
     public function __construct(
-        private readonly Category $category
+        private readonly Category $category,
     ) {
     }
 

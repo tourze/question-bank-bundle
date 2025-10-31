@@ -108,7 +108,7 @@ class TestEntityFactory
 
         $category = new Category($data['name'], $data['code']);
 
-        if ($data['description'] !== null) {
+        if (null !== $data['description']) {
             $category->setDescription($data['description']);
         }
 
@@ -143,11 +143,11 @@ class TestEntityFactory
         $slug = $data['slug'] ?? self::generateSlug($data['name']);
         $tag = new Tag($data['name'], $slug);
 
-        if ($data['description'] !== null) {
+        if (null !== $data['description']) {
             $tag->setDescription($data['description']);
         }
 
-        if ($data['color'] !== null) {
+        if (null !== $data['color']) {
             $tag->setColor($data['color']);
         }
 
@@ -159,8 +159,8 @@ class TestEntityFactory
         $slug = strtolower($text);
         $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
         $slug = preg_replace('/[\s]+/', '-', $slug);
-        $slug = trim($slug, '-');
-        return $slug;
+
+        return trim($slug, '-');
     }
 
     public static function createSingleChoiceQuestion(string $title = 'Single Choice Question'): Question
@@ -218,15 +218,15 @@ class TestEntityFactory
             new Difficulty($data['difficulty'])
         );
 
-        if ($data['score'] !== 10.0) {
+        if (10.0 !== $data['score']) {
             $question->setScore($data['score']);
         }
 
-        if ($data['explanation'] !== null) {
+        if (null !== $data['explanation']) {
             $question->setExplanation($data['explanation']);
         }
 
-        if ($data['metadata'] !== null) {
+        if (null !== $data['metadata']) {
             $question->setMetadata($data['metadata']);
         }
 
@@ -250,7 +250,7 @@ class TestEntityFactory
             $data['sortOrder']
         );
 
-        if ($data['explanation'] !== null) {
+        if (null !== $data['explanation']) {
             $option->setExplanation($data['explanation']);
         }
 

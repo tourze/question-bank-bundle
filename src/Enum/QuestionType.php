@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Enum;
 
+use Tourze\EnumExtra\BadgeInterface;
 use Tourze\EnumExtra\Itemable;
 use Tourze\EnumExtra\ItemTrait;
 use Tourze\EnumExtra\Labelable;
 use Tourze\EnumExtra\Selectable;
 use Tourze\EnumExtra\SelectTrait;
 
-enum QuestionType: string implements Itemable, Labelable, Selectable
+enum QuestionType: string implements Itemable, Labelable, Selectable, BadgeInterface
 {
     use ItemTrait;
     use SelectTrait;
@@ -23,7 +24,7 @@ enum QuestionType: string implements Itemable, Labelable, Selectable
 
     public function getLabel(): string
     {
-        return match($this) {
+        return match ($this) {
             self::SINGLE_CHOICE => '单选题',
             self::MULTIPLE_CHOICE => '多选题',
             self::TRUE_FALSE => '判断题',
@@ -34,7 +35,7 @@ enum QuestionType: string implements Itemable, Labelable, Selectable
 
     public function requiresOptions(): bool
     {
-        return match($this) {
+        return match ($this) {
             self::SINGLE_CHOICE, self::MULTIPLE_CHOICE, self::TRUE_FALSE => true,
             self::FILL_BLANK, self::ESSAY => false,
         };
@@ -42,7 +43,7 @@ enum QuestionType: string implements Itemable, Labelable, Selectable
 
     public function getMinOptions(): int
     {
-        return match($this) {
+        return match ($this) {
             self::TRUE_FALSE => 2,
             self::SINGLE_CHOICE, self::MULTIPLE_CHOICE => 2,
             default => 0,
@@ -51,7 +52,7 @@ enum QuestionType: string implements Itemable, Labelable, Selectable
 
     public function getMaxOptions(): int
     {
-        return match($this) {
+        return match ($this) {
             self::TRUE_FALSE => 2,
             self::SINGLE_CHOICE, self::MULTIPLE_CHOICE => 10,
             default => 0,
@@ -71,14 +72,14 @@ enum QuestionType: string implements Itemable, Labelable, Selectable
         };
     }
 
-    /**
-     * 转换为数组格式
-     */
-    public function toArray(): array
+    public function getBadge(): string
     {
-        return [
-            'value' => $this->value,
-            'label' => $this->getLabel(),
-        ];
+        return match ($this) {
+            self::SINGLE_CHOICE => BadgeInterface::PRIMARY,
+            self::MULTIPLE_CHOICE => BadgeInterface::INFO,
+            self::TRUE_FALSE => BadgeInterface::SUCCESS,
+            self::FILL_BLANK => BadgeInterface::WARNING,
+            self::ESSAY => BadgeInterface::SECONDARY,
+        };
     }
 }

@@ -7,9 +7,9 @@ namespace Tourze\QuestionBankBundle\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
@@ -17,29 +17,37 @@ use Tourze\QuestionBankBundle\Repository\OptionRepository;
 
 #[ORM\Entity(repositoryClass: OptionRepository::class)]
 #[ORM\Table(name: 'question_bank_options', options: ['comment' => '题目选项表'])]
-#[ORM\Index(columns: ['sort_order'], name: 'idx_option_sort_order')]
+// 选项实体通过 QuestionFixtures 创建，不需要独立的 OptionFixtures 类
 class Option implements \Stringable
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: 'uuid', unique: true, options: ['comment' => '选项ID'])]
-    private Uuid $id;
+    #[ORM\Column(type: Types::STRING, length: 36, unique: true, options: ['comment' => '选项ID'])]
+    #[ORM\CustomIdGenerator]
+    #[Assert\Length(max: 36)]
+    private string $id;
 
     #[TrackColumn]
     #[ORM\Column(type: Types::TEXT, options: ['comment' => '选项内容'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 65535)]
     private string $content;
 
     #[TrackColumn]
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否为正确答案'])]
+    #[Assert\Type(type: 'bool')]
     private bool $isCorrect;
 
     #[IndexColumn]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '排序顺序'])]
+    #[Assert\PositiveOrZero]
     private int $sortOrder = 0;
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '选项解释'])]
+    #[Assert\Length(max: 65535)]
     private ?string $explanation = null;
 
     #[ORM\ManyToOne(targetEntity: Question::class, fetch: 'EXTRA_LAZY', inversedBy: 'options')]
@@ -47,28 +55,17 @@ class Option implements \Stringable
     private ?Question $question = null;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
+    #[Assert\Type(type: 'bool')]
     private bool $valid = true;
 
-
-    #[CreateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
-    private ?string $updatedFromIp = null;
-
-    public function __construct(string $content, bool $isCorrect = false, int $sortOrder = 0)
+    public function __construct()
     {
-        $this->id = Uuid::v7();
-        $this->content = $content;
-        $this->isCorrect = $isCorrect;
-        $this->sortOrder = $sortOrder;
+        $this->id = Uuid::v7()->toRfc4122();
         $this->createTime = new \DateTimeImmutable();
         $this->updateTime = new \DateTimeImmutable();
     }
 
-    public function getId(): Uuid
+    public function getId(): string
     {
         return $this->id;
     }
@@ -78,11 +75,10 @@ class Option implements \Stringable
         return $this->content;
     }
 
-    public function setContent(string $content): self
+    public function setContent(string $content): void
     {
         $this->content = $content;
         $this->updateTime = new \DateTimeImmutable();
-        return $this;
     }
 
     public function isCorrect(): bool
@@ -90,11 +86,10 @@ class Option implements \Stringable
         return $this->isCorrect;
     }
 
-    public function setIsCorrect(bool $isCorrect): self
+    public function setIsCorrect(bool $isCorrect): void
     {
         $this->isCorrect = $isCorrect;
         $this->updateTime = new \DateTimeImmutable();
-        return $this;
     }
 
     public function getSortOrder(): int
@@ -102,10 +97,9 @@ class Option implements \Stringable
         return $this->sortOrder;
     }
 
-    public function setSortOrder(int $sortOrder): self
+    public function setSortOrder(int $sortOrder): void
     {
         $this->sortOrder = $sortOrder;
-        return $this;
     }
 
     public function getExplanation(): ?string
@@ -113,10 +107,9 @@ class Option implements \Stringable
         return $this->explanation;
     }
 
-    public function setExplanation(?string $explanation): self
+    public function setExplanation(?string $explanation): void
     {
         $this->explanation = $explanation;
-        return $this;
     }
 
     public function getQuestion(): ?Question
@@ -124,10 +117,9 @@ class Option implements \Stringable
         return $this->question;
     }
 
-    public function setQuestion(?Question $question): self
+    public function setQuestion(?Question $question): void
     {
         $this->question = $question;
-        return $this;
     }
 
     public function isValid(): bool
@@ -135,33 +127,9 @@ class Option implements \Stringable
         return $this->valid;
     }
 
-    public function setValid(bool $valid): self
+    public function setValid(bool $valid): void
     {
         $this->valid = $valid;
-        return $this;
-    }
-
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-        return $this;
     }
 
     public function __toString(): string
@@ -169,10 +137,13 @@ class Option implements \Stringable
         return $this->content;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function retrieveApiArray(): array
     {
         return [
-            'id' => $this->getId()->toRfc4122(),
+            'id' => $this->getId(),
             'content' => $this->getContent(),
             'image' => null, // question-bank-bundle 暂不支持图片，可扩展
             'correct' => $this->isCorrect(),

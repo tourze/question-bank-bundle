@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\ValueObject;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QuestionBankBundle\ValueObject\PaginatedResult;
 
-class PaginatedResultTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(PaginatedResult::class)]
+final class PaginatedResultTest extends TestCase
 {
-    public function test_constructor_setsAllProperties(): void
+    public function testConstructorSetsAllProperties(): void
     {
         $items = ['item1', 'item2', 'item3'];
         $result = new PaginatedResult($items, 10, 2, 5);
@@ -20,7 +25,7 @@ class PaginatedResultTest extends TestCase
         $this->assertEquals(5, $result->getLimit());
     }
 
-    public function test_getItems_returnsOriginalItems(): void
+    public function testGetItemsReturnsOriginalItems(): void
     {
         $items = ['item1', 'item2', 'item3'];
         $result = new PaginatedResult($items, 10, 1, 5);
@@ -29,28 +34,28 @@ class PaginatedResultTest extends TestCase
         $this->assertCount(3, $result->getItems());
     }
 
-    public function test_getTotal_returnsTotalCount(): void
+    public function testGetTotalReturnsTotalCount(): void
     {
         $result = new PaginatedResult([], 25, 1, 10);
 
         $this->assertEquals(25, $result->getTotal());
     }
 
-    public function test_getPage_returnsCurrentPage(): void
+    public function testGetPageReturnsCurrentPage(): void
     {
         $result = new PaginatedResult([], 25, 3, 10);
 
         $this->assertEquals(3, $result->getPage());
     }
 
-    public function test_getLimit_returnsLimit(): void
+    public function testGetLimitReturnsLimit(): void
     {
         $result = new PaginatedResult([], 25, 1, 15);
 
         $this->assertEquals(15, $result->getLimit());
     }
 
-    public function test_getTotalPages_calculatesCorrectly(): void
+    public function testGetTotalPagesCalculatesCorrectly(): void
     {
         // 测试整除情况
         $result1 = new PaginatedResult([], 20, 1, 10);
@@ -69,56 +74,56 @@ class PaginatedResultTest extends TestCase
         $this->assertEquals(1, $result4->getTotalPages());
     }
 
-    public function test_hasNextPage_returnsTrueWhenNextPageExists(): void
+    public function testHasNextPageReturnsTrueWhenNextPageExists(): void
     {
         $result = new PaginatedResult([], 25, 2, 10);
 
         $this->assertTrue($result->hasNextPage());
     }
 
-    public function test_hasNextPage_returnsFalseWhenOnLastPage(): void
+    public function testHasNextPageReturnsFalseWhenOnLastPage(): void
     {
         $result = new PaginatedResult([], 25, 3, 10);
 
         $this->assertFalse($result->hasNextPage());
     }
 
-    public function test_hasNextPage_returnsFalseWhenNoItems(): void
+    public function testHasNextPageReturnsFalseWhenNoItems(): void
     {
         $result = new PaginatedResult([], 0, 1, 10);
 
         $this->assertFalse($result->hasNextPage());
     }
 
-    public function test_hasPreviousPage_returnsTrueWhenNotOnFirstPage(): void
+    public function testHasPreviousPageReturnsTrueWhenNotOnFirstPage(): void
     {
         $result = new PaginatedResult([], 25, 2, 10);
 
         $this->assertTrue($result->hasPreviousPage());
     }
 
-    public function test_hasPreviousPage_returnsFalseWhenOnFirstPage(): void
+    public function testHasPreviousPageReturnsFalseWhenOnFirstPage(): void
     {
         $result = new PaginatedResult([], 25, 1, 10);
 
         $this->assertFalse($result->hasPreviousPage());
     }
 
-    public function test_isEmpty_returnsTrueWhenNoItems(): void
+    public function testIsEmptyReturnsTrueWhenNoItems(): void
     {
         $result = new PaginatedResult([], 0, 1, 10);
 
         $this->assertTrue($result->isEmpty());
     }
 
-    public function test_isEmpty_returnsFalseWhenHasItems(): void
+    public function testIsEmptyReturnsFalseWhenHasItems(): void
     {
         $result = new PaginatedResult(['item1'], 1, 1, 10);
 
         $this->assertFalse($result->isEmpty());
     }
 
-    public function test_count_returnsNumberOfItems(): void
+    public function testCountReturnsNumberOfItems(): void
     {
         $items = ['item1', 'item2', 'item3'];
         $result = new PaginatedResult($items, 25, 1, 10);
@@ -127,7 +132,7 @@ class PaginatedResultTest extends TestCase
         $this->assertCount(3, $result);
     }
 
-    public function test_iterator_allowsIteration(): void
+    public function testIteratorAllowsIteration(): void
     {
         $items = ['item1', 'item2', 'item3'];
         $result = new PaginatedResult($items, 10, 1, 10);
@@ -140,7 +145,7 @@ class PaginatedResultTest extends TestCase
         $this->assertEquals($items, $iteratedItems);
     }
 
-    public function test_iterator_worksWithEmptyResult(): void
+    public function testIteratorWorksWithEmptyResult(): void
     {
         $result = new PaginatedResult([], 0, 1, 10);
 
@@ -152,7 +157,7 @@ class PaginatedResultTest extends TestCase
         $this->assertEmpty($iteratedItems);
     }
 
-    public function test_getOffset_calculatesCorrectly(): void
+    public function testGetOffsetCalculatesCorrectly(): void
     {
         // 第1页，每页10条
         $result1 = new PaginatedResult([], 25, 1, 10);
@@ -167,35 +172,35 @@ class PaginatedResultTest extends TestCase
         $this->assertEquals(10, $result3->getOffset());
     }
 
-    public function test_isFirstPage_returnsTrueOnFirstPage(): void
+    public function testIsFirstPageReturnsTrueOnFirstPage(): void
     {
         $result = new PaginatedResult([], 25, 1, 10);
 
         $this->assertTrue($result->isFirstPage());
     }
 
-    public function test_isFirstPage_returnsFalseOnOtherPages(): void
+    public function testIsFirstPageReturnsFalseOnOtherPages(): void
     {
         $result = new PaginatedResult([], 25, 2, 10);
 
         $this->assertFalse($result->isFirstPage());
     }
 
-    public function test_isLastPage_returnsTrueOnLastPage(): void
+    public function testIsLastPageReturnsTrueOnLastPage(): void
     {
         $result = new PaginatedResult([], 25, 3, 10);
 
         $this->assertTrue($result->isLastPage());
     }
 
-    public function test_isLastPage_returnsFalseOnOtherPages(): void
+    public function testIsLastPageReturnsFalseOnOtherPages(): void
     {
         $result = new PaginatedResult([], 25, 2, 10);
 
         $this->assertFalse($result->isLastPage());
     }
 
-    public function test_edgeCases(): void
+    public function testEdgeCases(): void
     {
         // 测试大数值
         $largeResult = new PaginatedResult([], 1000000, 5000, 200);
@@ -208,7 +213,7 @@ class PaginatedResultTest extends TestCase
         $this->assertTrue($singleResult->isLastPage());
     }
 
-    public function test_realWorldScenario(): void
+    public function testRealWorldScenario(): void
     {
         // 模拟真实的分页场景：总共127条记录，每页20条，当前第3页
         $currentPageItems = array_fill(0, 20, 'question');

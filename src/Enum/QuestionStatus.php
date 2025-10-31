@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Enum;
 
+use Tourze\EnumExtra\BadgeInterface;
 use Tourze\EnumExtra\Itemable;
 use Tourze\EnumExtra\ItemTrait;
 use Tourze\EnumExtra\Labelable;
 use Tourze\EnumExtra\Selectable;
 use Tourze\EnumExtra\SelectTrait;
 
-enum QuestionStatus: string implements Itemable, Labelable, Selectable
+enum QuestionStatus: string implements Itemable, Labelable, Selectable, BadgeInterface
 {
     use ItemTrait;
     use SelectTrait;
@@ -21,7 +22,7 @@ enum QuestionStatus: string implements Itemable, Labelable, Selectable
 
     public function getLabel(): string
     {
-        return match($this) {
+        return match ($this) {
             self::DRAFT => '草稿',
             self::PUBLISHED => '已发布',
             self::ARCHIVED => '已归档',
@@ -30,17 +31,17 @@ enum QuestionStatus: string implements Itemable, Labelable, Selectable
 
     public function isEditable(): bool
     {
-        return $this === self::DRAFT;
+        return self::DRAFT === $this;
     }
 
     public function isUsable(): bool
     {
-        return $this === self::PUBLISHED;
+        return self::PUBLISHED === $this;
     }
 
     public function getColor(): string
     {
-        return match($this) {
+        return match ($this) {
             self::DRAFT => 'warning',
             self::PUBLISHED => 'success',
             self::ARCHIVED => 'secondary',
@@ -49,9 +50,9 @@ enum QuestionStatus: string implements Itemable, Labelable, Selectable
 
     public function canTransitionTo(self $status): bool
     {
-        return match($this) {
-            self::DRAFT => $status === self::PUBLISHED,
-            self::PUBLISHED => $status === self::ARCHIVED,
+        return match ($this) {
+            self::DRAFT => self::PUBLISHED === $status,
+            self::PUBLISHED => self::ARCHIVED === $status,
             self::ARCHIVED => false,
         };
     }
@@ -61,7 +62,7 @@ enum QuestionStatus: string implements Itemable, Labelable, Selectable
      */
     public function getAvailableTransitions(): array
     {
-        return match($this) {
+        return match ($this) {
             self::DRAFT => [self::PUBLISHED],
             self::PUBLISHED => [self::ARCHIVED],
             self::ARCHIVED => [],
@@ -84,5 +85,10 @@ enum QuestionStatus: string implements Itemable, Labelable, Selectable
     public static function isValidTransition(self $from, self $to): bool
     {
         return $from->canTransitionTo($to);
+    }
+
+    public function getBadge(): string
+    {
+        return $this->getColor();
     }
 }

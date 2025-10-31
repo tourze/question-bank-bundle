@@ -4,21 +4,58 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Entity;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 use Tourze\QuestionBankBundle\Entity\Category;
 use Tourze\QuestionBankBundle\Entity\Option;
 use Tourze\QuestionBankBundle\Entity\Question;
 use Tourze\QuestionBankBundle\Entity\Tag;
 use Tourze\QuestionBankBundle\Enum\QuestionStatus;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
+use Tourze\QuestionBankBundle\Exception\QuestionStateException;
 use Tourze\QuestionBankBundle\ValueObject\Difficulty;
 
-class QuestionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(Question::class)]
+final class QuestionTest extends AbstractEntityTestCase
 {
-    public function test_constructor_setsDefaultValues(): void
+    protected function createEntity(): object
     {
         $difficulty = new Difficulty(3);
-        $question = new Question('Test Title', 'Test Content', QuestionType::SINGLE_CHOICE, $difficulty);
+        $question = new Question();
+        $question->setTitle('Test Question');
+        $question->setContent('Test Content');
+        $question->setType(QuestionType::SINGLE_CHOICE);
+        $question->setDifficulty($difficulty);
+
+        return $question;
+    }
+
+    /**
+     * 提供属性及其样本值的 Data Provider.
+     *
+     * @return iterable<string, array{0: string, 1: mixed}>
+     */
+    public static function propertiesProvider(): iterable
+    {
+        yield 'title' => ['title', 'Updated Question Title'];
+        yield 'content' => ['content', 'Updated question content'];
+        yield 'score' => ['score', 15.50];
+        yield 'explanation' => ['explanation', 'This is an explanation for the question'];
+        yield 'metadata' => ['metadata', ['key1' => 'value1', 'key2' => 'value2']];
+        yield 'valid' => ['valid', false];
+    }
+
+    public function testConstructorSetsDefaultValues(): void
+    {
+        $difficulty = new Difficulty(3);
+        $question = new Question();
+        $question->setTitle('Test Title');
+        $question->setContent('Test Content');
+        $question->setType(QuestionType::SINGLE_CHOICE);
+        $question->setDifficulty($difficulty);
 
         $this->assertEquals('Test Title', $question->getTitle());
         $this->assertEquals('Test Content', $question->getContent());
@@ -34,7 +71,7 @@ class QuestionTest extends TestCase
         $this->assertCount(0, $question->getOptions());
     }
 
-    public function test_setTitle_updatesTitle(): void
+    public function testSetTitleUpdatesTitle(): void
     {
         $question = $this->createTestQuestion();
         $originalUpdateTime = $question->getUpdateTime();
@@ -49,10 +86,16 @@ class QuestionTest extends TestCase
     private function createTestQuestion(): Question
     {
         $difficulty = new Difficulty(3);
-        return new Question('Test Question', 'Test Content', QuestionType::SINGLE_CHOICE, $difficulty);
+        $question = new Question();
+        $question->setTitle('Test Question');
+        $question->setContent('Test Content');
+        $question->setType(QuestionType::SINGLE_CHOICE);
+        $question->setDifficulty($difficulty);
+
+        return $question;
     }
 
-    public function test_setContent_updatesContent(): void
+    public function testSetContentUpdatesContent(): void
     {
         $question = $this->createTestQuestion();
 
@@ -61,7 +104,7 @@ class QuestionTest extends TestCase
         $this->assertEquals('New Content', $question->getContent());
     }
 
-    public function test_setDifficulty_updatesDifficulty(): void
+    public function testSetDifficultyUpdatesDifficulty(): void
     {
         $question = $this->createTestQuestion();
         $newDifficulty = new Difficulty(5);
@@ -71,7 +114,7 @@ class QuestionTest extends TestCase
         $this->assertEquals(5, $question->getDifficulty()->getLevel());
     }
 
-    public function test_setScore_updatesScore(): void
+    public function testSetScoreUpdatesScore(): void
     {
         $question = $this->createTestQuestion();
 
@@ -80,7 +123,7 @@ class QuestionTest extends TestCase
         $this->assertEquals(15.5, $question->getScore());
     }
 
-    public function test_setExplanation_updatesExplanation(): void
+    public function testSetExplanationUpdatesExplanation(): void
     {
         $question = $this->createTestQuestion();
 
@@ -89,7 +132,7 @@ class QuestionTest extends TestCase
         $this->assertEquals('Test Explanation', $question->getExplanation());
     }
 
-    public function test_setMetadata_updatesMetadata(): void
+    public function testSetMetadataUpdatesMetadata(): void
     {
         $question = $this->createTestQuestion();
         $metadata = ['key' => 'value'];
@@ -99,7 +142,7 @@ class QuestionTest extends TestCase
         $this->assertEquals($metadata, $question->getMetadata());
     }
 
-    public function test_publish_changesStatusFromDraft(): void
+    public function testPublishChangesStatusFromDraft(): void
     {
         $question = $this->createTestQuestion();
 
@@ -108,18 +151,18 @@ class QuestionTest extends TestCase
         $this->assertEquals(QuestionStatus::PUBLISHED, $question->getStatus());
     }
 
-    public function test_publish_throwsExceptionWhenNotDraft(): void
+    public function testPublishThrowsExceptionWhenNotDraft(): void
     {
         $question = $this->createTestQuestion();
         $question->publish(); // 先发布
 
-        $this->expectException(\Tourze\QuestionBankBundle\Exception\QuestionStateException::class);
+        $this->expectException(QuestionStateException::class);
         $this->expectExceptionMessage('Only draft questions can be published');
 
         $question->publish(); // 再次发布应该失败
     }
 
-    public function test_archive_changesStatusFromPublished(): void
+    public function testArchiveChangesStatusFromPublished(): void
     {
         $question = $this->createTestQuestion();
         $question->publish();
@@ -129,20 +172,22 @@ class QuestionTest extends TestCase
         $this->assertEquals(QuestionStatus::ARCHIVED, $question->getStatus());
     }
 
-    public function test_archive_throwsExceptionWhenNotPublished(): void
+    public function testArchiveThrowsExceptionWhenNotPublished(): void
     {
         $question = $this->createTestQuestion();
 
-        $this->expectException(\Tourze\QuestionBankBundle\Exception\QuestionStateException::class);
+        $this->expectException(QuestionStateException::class);
         $this->expectExceptionMessage('Only published questions can be archived');
 
         $question->archive();
     }
 
-    public function test_addCategory_addsNewCategory(): void
+    public function testAddCategoryAddsNewCategory(): void
     {
         $question = $this->createTestQuestion();
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $question->addCategory($category);
 
@@ -150,10 +195,12 @@ class QuestionTest extends TestCase
         $this->assertTrue($question->getCategories()->contains($category));
     }
 
-    public function test_addCategory_doesNotAddDuplicateCategory(): void
+    public function testAddCategoryDoesNotAddDuplicateCategory(): void
     {
         $question = $this->createTestQuestion();
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $question->addCategory($category);
         $question->addCategory($category); // 添加重复分类
@@ -161,10 +208,12 @@ class QuestionTest extends TestCase
         $this->assertCount(1, $question->getCategories());
     }
 
-    public function test_removeCategory_removesExistingCategory(): void
+    public function testRemoveCategoryRemovesExistingCategory(): void
     {
         $question = $this->createTestQuestion();
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
         $question->addCategory($category);
 
         $question->removeCategory($category);
@@ -173,10 +222,11 @@ class QuestionTest extends TestCase
         $this->assertFalse($question->getCategories()->contains($category));
     }
 
-    public function test_addTag_addsNewTagAndIncrementsUsageCount(): void
+    public function testAddTagAddsNewTagAndIncrementsUsageCount(): void
     {
         $question = $this->createTestQuestion();
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
         $originalUsageCount = $tag->getUsageCount();
 
         $question->addTag($tag);
@@ -186,10 +236,11 @@ class QuestionTest extends TestCase
         $this->assertEquals($originalUsageCount + 1, $tag->getUsageCount());
     }
 
-    public function test_removeTag_removesExistingTagAndDecrementsUsageCount(): void
+    public function testRemoveTagRemovesExistingTagAndDecrementsUsageCount(): void
     {
         $question = $this->createTestQuestion();
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
         $question->addTag($tag);
         $usageCountAfterAdd = $tag->getUsageCount();
 
@@ -200,10 +251,12 @@ class QuestionTest extends TestCase
         $this->assertEquals($usageCountAfterAdd - 1, $tag->getUsageCount());
     }
 
-    public function test_addOption_addsNewOption(): void
+    public function testAddOptionAddsNewOption(): void
     {
         $question = $this->createTestQuestion();
-        $option = new Option('Test Option', true);
+        $option = new Option();
+        $option->setContent('Test Option');
+        $option->setIsCorrect(true);
 
         $question->addOption($option);
 
@@ -212,10 +265,12 @@ class QuestionTest extends TestCase
         $this->assertEquals($question, $option->getQuestion());
     }
 
-    public function test_removeOption_removesExistingOption(): void
+    public function testRemoveOptionRemovesExistingOption(): void
     {
         $question = $this->createTestQuestion();
-        $option = new Option('Test Option', true);
+        $option = new Option();
+        $option->setContent('Test Option');
+        $option->setIsCorrect(true);
         $question->addOption($option);
 
         $question->removeOption($option);
@@ -225,12 +280,18 @@ class QuestionTest extends TestCase
         $this->assertNull($option->getQuestion());
     }
 
-    public function test_getCorrectOptions_returnsOnlyCorrectOptions(): void
+    public function testGetCorrectOptionsReturnsOnlyCorrectOptions(): void
     {
         $question = $this->createTestQuestion();
-        $correctOption1 = new Option('Correct 1', true);
-        $wrongOption = new Option('Wrong', false);
-        $correctOption2 = new Option('Correct 2', true);
+        $correctOption1 = new Option();
+        $correctOption1->setContent('Correct 1');
+        $correctOption1->setIsCorrect(true);
+        $wrongOption = new Option();
+        $wrongOption->setContent('Wrong');
+        $wrongOption->setIsCorrect(false);
+        $correctOption2 = new Option();
+        $correctOption2->setContent('Correct 2');
+        $correctOption2->setIsCorrect(true);
 
         $question->addOption($correctOption1);
         $question->addOption($wrongOption);
@@ -244,25 +305,29 @@ class QuestionTest extends TestCase
         $this->assertFalse($correctOptions->contains($wrongOption));
     }
 
-    public function test_hasCorrectOption_returnsTrueWhenCorrectOptionExists(): void
+    public function testHasCorrectOptionReturnsTrueWhenCorrectOptionExists(): void
     {
         $question = $this->createTestQuestion();
-        $correctOption = new Option('Correct', true);
+        $correctOption = new Option();
+        $correctOption->setContent('Correct');
+        $correctOption->setIsCorrect(true);
         $question->addOption($correctOption);
 
         $this->assertTrue($question->hasCorrectOption());
     }
 
-    public function test_hasCorrectOption_returnsFalseWhenNoCorrectOption(): void
+    public function testHasCorrectOptionReturnsFalseWhenNoCorrectOption(): void
     {
         $question = $this->createTestQuestion();
-        $wrongOption = new Option('Wrong', false);
+        $wrongOption = new Option();
+        $wrongOption->setContent('Wrong');
+        $wrongOption->setIsCorrect(false);
         $question->addOption($wrongOption);
 
         $this->assertFalse($question->hasCorrectOption());
     }
 
-    public function test_setValid_updatesValidFlag(): void
+    public function testSetValidUpdatesValidFlag(): void
     {
         $question = $this->createTestQuestion();
 
@@ -271,21 +336,21 @@ class QuestionTest extends TestCase
         $this->assertFalse($question->isValid());
     }
 
-    public function test_toString_returnsTitle(): void
+    public function testToStringReturnsTitle(): void
     {
         $question = $this->createTestQuestion();
 
         $this->assertEquals('Test Question', (string) $question);
     }
 
-    public function test_isEditable_returnsTrueForDraftStatus(): void
+    public function testIsEditableReturnsTrueForDraftStatus(): void
     {
         $question = $this->createTestQuestion();
 
         $this->assertTrue($question->isEditable());
     }
 
-    public function test_isEditable_returnsFalseForPublishedStatus(): void
+    public function testIsEditableReturnsFalseForPublishedStatus(): void
     {
         $question = $this->createTestQuestion();
         $question->publish();
@@ -293,7 +358,7 @@ class QuestionTest extends TestCase
         $this->assertFalse($question->isEditable());
     }
 
-    public function test_isUsable_returnsTrueForPublishedStatus(): void
+    public function testIsUsableReturnsTrueForPublishedStatus(): void
     {
         $question = $this->createTestQuestion();
         $question->publish();
@@ -301,7 +366,7 @@ class QuestionTest extends TestCase
         $this->assertTrue($question->isUsable());
     }
 
-    public function test_isUsable_returnsFalseForDraftStatus(): void
+    public function testIsUsableReturnsFalseForDraftStatus(): void
     {
         $question = $this->createTestQuestion();
 

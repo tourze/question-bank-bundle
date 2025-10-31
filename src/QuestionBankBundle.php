@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle;
 
+use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Tourze\BundleDependency\BundleDependencyInterface;
+use Tourze\DoctrineTimestampBundle\DoctrineTimestampBundle;
 
-class QuestionBankBundle extends Bundle
+class QuestionBankBundle extends Bundle implements BundleDependencyInterface
 {
-    public function getPath(): string
+    public static function getBundleDependencies(): array
     {
-        return dirname(__DIR__);
+        return [
+            DoctrineBundle::class => ['all' => true],
+            DoctrineTimestampBundle::class => ['all' => true],
+        ];
     }
 }

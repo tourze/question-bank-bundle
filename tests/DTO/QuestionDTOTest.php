@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\DTO;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QuestionBankBundle\DTO\OptionDTO;
 use Tourze\QuestionBankBundle\DTO\QuestionDTO;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
 
-class QuestionDTOTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(QuestionDTO::class)]
+final class QuestionDTOTest extends TestCase
 {
-    public function test_constructor_setsDefaultValues(): void
+    public function testConstructorSetsDefaultValues(): void
     {
         $dto = new QuestionDTO();
 
@@ -24,7 +29,7 @@ class QuestionDTOTest extends TestCase
         $this->assertEmpty($dto->options);
     }
 
-    public function test_create_withValidData_createsCorrectDTO(): void
+    public function testCreateWithValidDataCreatesCorrectDTO(): void
     {
         $dto = QuestionDTO::create(
             'Test Question',
@@ -39,7 +44,7 @@ class QuestionDTOTest extends TestCase
         $this->assertEquals(10.0, $dto->score); // default
     }
 
-    public function test_propertyAssignment_worksCorrectly(): void
+    public function testPropertyAssignmentWorksCorrectly(): void
     {
         $dto = new QuestionDTO();
 
@@ -64,7 +69,7 @@ class QuestionDTOTest extends TestCase
         $this->assertEquals(['tag1', 'tag2', 'tag3'], $dto->tagIds);
     }
 
-    public function test_options_canBeAddedAndAccessed(): void
+    public function testOptionsCanBeAddedAndAccessed(): void
     {
         $dto = new QuestionDTO();
 
@@ -85,7 +90,7 @@ class QuestionDTOTest extends TestCase
         $this->assertFalse($dto->options[1]->isCorrect);
     }
 
-    public function test_categoryIds_canBeManipulated(): void
+    public function testCategoryIdsCanBeManipulated(): void
     {
         $dto = new QuestionDTO();
 
@@ -102,7 +107,7 @@ class QuestionDTOTest extends TestCase
         $this->assertEquals(['cat1', 'cat3'], $dto->categoryIds);
     }
 
-    public function test_tagIds_canBeManipulated(): void
+    public function testTagIdsCanBeManipulated(): void
     {
         $dto = new QuestionDTO();
 
@@ -118,7 +123,7 @@ class QuestionDTOTest extends TestCase
         $this->assertEquals(['tag1', 'tag3'], array_values($dto->tagIds));
     }
 
-    public function test_metadata_canStoreComplexData(): void
+    public function testMetadataCanStoreComplexData(): void
     {
         $dto = new QuestionDTO();
 
@@ -130,8 +135,8 @@ class QuestionDTOTest extends TestCase
             'tags' => ['important', 'exam'],
             'nested' => [
                 'level' => 'intermediate',
-                'prerequisites' => ['basic-php', 'variables']
-            ]
+                'prerequisites' => ['basic-php', 'variables'],
+            ],
         ];
 
         $dto->metadata = $complexMetadata;
@@ -142,18 +147,18 @@ class QuestionDTOTest extends TestCase
         $this->assertEquals('intermediate', $dto->metadata['nested']['level']);
     }
 
-    public function test_difficultyRange_acceptsValidValues(): void
+    public function testDifficultyRangeAcceptsValidValues(): void
     {
         $dto = new QuestionDTO();
 
         // Test all valid difficulty levels
-        for ($difficulty = 1; $difficulty <= 5; $difficulty++) {
+        for ($difficulty = 1; $difficulty <= 5; ++$difficulty) {
             $dto->difficulty = $difficulty;
             $this->assertEquals($difficulty, $dto->difficulty);
         }
     }
 
-    public function test_scoreValues_acceptsPositiveNumbers(): void
+    public function testScoreValuesAcceptsPositiveNumbers(): void
     {
         $dto = new QuestionDTO();
 
@@ -165,7 +170,7 @@ class QuestionDTOTest extends TestCase
         }
     }
 
-    public function test_allQuestionTypes_canBeAssigned(): void
+    public function testAllQuestionTypesCanBeAssigned(): void
     {
         $dto = new QuestionDTO();
 
@@ -175,7 +180,7 @@ class QuestionDTOTest extends TestCase
         }
     }
 
-    public function test_explanation_canBeSetAndCleared(): void
+    public function testExplanationCanBeSetAndCleared(): void
     {
         $dto = new QuestionDTO();
 
@@ -189,7 +194,7 @@ class QuestionDTOTest extends TestCase
         $this->assertEquals('', $dto->explanation);
     }
 
-    public function test_emptyArrays_remainEmptyWhenNotModified(): void
+    public function testEmptyArraysRemainEmptyWhenNotModified(): void
     {
         $dto = new QuestionDTO();
 
@@ -198,6 +203,5 @@ class QuestionDTOTest extends TestCase
         $this->assertEmpty($dto->options);
 
         // Verify they are actual arrays
-
     }
 }

@@ -10,9 +10,9 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
@@ -26,31 +26,41 @@ class Category implements \Stringable
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
 
     #[ORM\Id]
-    #[ORM\Column(type: 'uuid', unique: true, options: ['comment' => '分类ID'])]
-    private Uuid $id;
+    #[ORM\Column(type: Types::STRING, length: 36, unique: true, options: ['comment' => '分类ID'])]
+    #[ORM\CustomIdGenerator]
+    #[Assert\Length(max: 36)]
+    private string $id;
 
     #[TrackColumn]
     #[ORM\Column(type: Types::STRING, length: 100, options: ['comment' => '分类名称'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 100)]
     private string $name;
 
     #[TrackColumn]
     #[ORM\Column(type: Types::STRING, length: 50, unique: true, options: ['comment' => '分类代码'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     private string $code;
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '分类描述'])]
+    #[Assert\Length(max: 65535)]
     private ?string $description = null;
 
     #[IndexColumn]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '排序顺序'])]
+    #[Assert\PositiveOrZero]
     private int $sortOrder = 0;
 
     #[IndexColumn]
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否有效'])]
+    #[Assert\Type(type: 'bool')]
     private bool $valid = true;
 
-    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'children', fetch: 'EXTRA_LAZY')]
+    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'children', cascade: ['persist'], fetch: 'EXTRA_LAZY')]
     #[ORM\JoinColumn(nullable: true)]
     private ?self $parent = null;
 
@@ -68,33 +78,23 @@ class Category implements \Stringable
     private Collection $questions;
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '分类层级'])]
+    #[Assert\PositiveOrZero]
     private int $level = 0;
 
     #[ORM\Column(type: Types::STRING, length: 255, options: ['comment' => '分类路径'])]
+    #[Assert\Length(max: 255)]
     private string $path = '';
 
-
-    #[CreateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
-    private ?string $updatedFromIp = null;
-
-    public function __construct(string $name, string $code)
+    public function __construct()
     {
-        $this->id = Uuid::v7();
-        $this->name = $name;
-        $this->code = $code;
+        $this->id = Uuid::v7()->toRfc4122();
         $this->children = new ArrayCollection();
         $this->questions = new ArrayCollection();
         $this->createTime = new \DateTimeImmutable();
         $this->updateTime = new \DateTimeImmutable();
-        $this->updatePath();
     }
 
-    public function getId(): Uuid
+    public function getId(): string
     {
         return $this->id;
     }
@@ -104,10 +104,9 @@ class Category implements \Stringable
         return $this->name;
     }
 
-    public function setName(string $name): self
+    public function setName(string $name): void
     {
         $this->name = $name;
-        return $this;
     }
 
     public function getCode(): string
@@ -115,11 +114,10 @@ class Category implements \Stringable
         return $this->code;
     }
 
-    public function setCode(string $code): self
+    public function setCode(string $code): void
     {
         $this->code = $code;
         $this->updatePath();
-        return $this;
     }
 
     public function getDescription(): ?string
@@ -127,10 +125,9 @@ class Category implements \Stringable
         return $this->description;
     }
 
-    public function setDescription(?string $description): self
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
-        return $this;
     }
 
     public function getSortOrder(): int
@@ -138,10 +135,9 @@ class Category implements \Stringable
         return $this->sortOrder;
     }
 
-    public function setSortOrder(int $sortOrder): self
+    public function setSortOrder(int $sortOrder): void
     {
         $this->sortOrder = $sortOrder;
-        return $this;
     }
 
     public function isValid(): bool
@@ -149,10 +145,9 @@ class Category implements \Stringable
         return $this->valid;
     }
 
-    public function setValid(bool $valid): self
+    public function setValid(bool $valid): void
     {
         $this->valid = $valid;
-        return $this;
     }
 
     public function getParent(): ?self
@@ -160,30 +155,28 @@ class Category implements \Stringable
         return $this->parent;
     }
 
-    public function setParent(?self $parent): self
+    public function setParent(?self $parent): void
     {
         if ($parent === $this) {
             throw new CategoryHierarchyException('Category cannot be its own parent');
         }
 
-        if ($parent !== null && $this->isAncestorOf($parent)) {
+        if (null !== $parent && $this->isAncestorOf($parent)) {
             throw new CategoryHierarchyException('Cannot set descendant as parent');
         }
 
-        if ($this->parent !== null && $this->parent->getChildren()->contains($this)) {
+        if (null !== $this->parent && $this->parent->getChildren()->contains($this)) {
             $this->parent->getChildren()->removeElement($this);
         }
 
         $this->parent = $parent;
 
-        if ($parent !== null && !$parent->getChildren()->contains($this)) {
+        if (null !== $parent && !$parent->getChildren()->contains($this)) {
             $parent->getChildren()->add($this);
         }
 
         $this->updateLevel();
         $this->updatePath();
-
-        return $this;
     }
 
     /**
@@ -233,28 +226,6 @@ class Category implements \Stringable
         return $this->questions;
     }
 
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-        return $this;
-    }
-
     public function __toString(): string
     {
         return $this->name;
@@ -263,12 +234,13 @@ class Category implements \Stringable
     public function isAncestorOf(self $category): bool
     {
         $parent = $category->getParent();
-        while ($parent !== null) {
+        while (null !== $parent) {
             if ($parent === $this) {
                 return true;
             }
             $parent = $parent->getParent();
         }
+
         return false;
     }
 
@@ -285,7 +257,7 @@ class Category implements \Stringable
         $ancestors = [];
         $parent = $this->parent;
 
-        while ($parent !== null) {
+        while (null !== $parent) {
             array_unshift($ancestors, $parent);
             $parent = $parent->getParent();
         }
@@ -300,12 +272,13 @@ class Category implements \Stringable
     {
         $path = $this->getAncestors();
         $path[] = $this;
+
         return $path;
     }
 
     private function updateLevel(): void
     {
-        $this->level = $this->parent !== null ? $this->parent->getLevel() + 1 : 0;
+        $this->level = null !== $this->parent ? $this->parent->getLevel() + 1 : 0;
 
         foreach ($this->children as $child) {
             $child->updateLevel();
@@ -314,7 +287,7 @@ class Category implements \Stringable
 
     private function updatePath(): void
     {
-        if ($this->parent !== null) {
+        if (null !== $this->parent) {
             $this->path = $this->parent->getPath() . '/' . $this->code;
         } else {
             $this->path = '/' . $this->code;

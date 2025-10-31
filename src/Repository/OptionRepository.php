@@ -7,12 +7,14 @@ namespace Tourze\QuestionBankBundle\Repository;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 use Tourze\QuestionBankBundle\Entity\Option;
 use Tourze\QuestionBankBundle\Entity\Question;
 
 /**
  * @extends ServiceEntityRepository<Option>
  */
+#[AsRepository(entityClass: Option::class)]
 class OptionRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -20,21 +22,7 @@ class OptionRepository extends ServiceEntityRepository
         parent::__construct($registry, Option::class);
     }
 
-    public function save(Option $option, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($option);
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(Option $option): void
-    {
-        $this->getEntityManager()->remove($option);
-        $this->getEntityManager()->flush();
-    }
-
-    public function find($id, LockMode|int|null $lockMode = null, $lockVersion = null): ?Option
+    public function find($id, LockMode|int|null $lockMode = null, ?int $lockVersion = null): ?Option
     {
         return parent::find($id, $lockMode, $lockVersion);
     }
@@ -44,12 +32,14 @@ class OptionRepository extends ServiceEntityRepository
      */
     public function findByQuestion(Question $question): array
     {
+        /** @var array<Option> */
         return $this->createQueryBuilder('o')
             ->andWhere('o.question = :question')
             ->setParameter('question', $question)
             ->orderBy('o.sortOrder', 'ASC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
     }
 
     /**
@@ -57,6 +47,7 @@ class OptionRepository extends ServiceEntityRepository
      */
     public function findCorrectOptionsByQuestion(Question $question): array
     {
+        /** @var array<Option> */
         return $this->createQueryBuilder('o')
             ->andWhere('o.question = :question')
             ->andWhere('o.isCorrect = :isCorrect')
@@ -64,7 +55,8 @@ class OptionRepository extends ServiceEntityRepository
             ->setParameter('isCorrect', true)
             ->orderBy('o.sortOrder', 'ASC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
     }
 
     public function countByQuestion(Question $question): int
@@ -74,7 +66,8 @@ class OptionRepository extends ServiceEntityRepository
             ->andWhere('o.question = :question')
             ->setParameter('question', $question)
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getSingleScalarResult()
+        ;
     }
 
     /**
@@ -85,11 +78,29 @@ class OptionRepository extends ServiceEntityRepository
         foreach ($reorderData as $optionId => $newOrder) {
             // 使用实体方式更新以确保正确处理 UUID
             $option = $this->find($optionId);
-            if ($option !== null) {
+            if (null !== $option) {
                 $option->setSortOrder($newOrder);
                 $this->getEntityManager()->persist($option);
             }
         }
         $this->getEntityManager()->flush();
+    }
+
+    public function save(Option $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(Option $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

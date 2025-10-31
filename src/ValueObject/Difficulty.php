@@ -10,7 +10,7 @@ final class Difficulty
 {
     private const MIN_LEVEL = 1;
     private const MAX_LEVEL = 5;
-    
+
     private const LABELS = [
         1 => '简单',
         2 => '较易',
@@ -19,21 +19,11 @@ final class Difficulty
         5 => '困难',
     ];
 
-    private int $level;
-
-    public function __construct(int $level)
+    public function __construct(private readonly int $level)
     {
         if ($level < self::MIN_LEVEL || $level > self::MAX_LEVEL) {
-            throw new DifficultyValidationException(
-                sprintf('Difficulty level must be between %d and %d, %d given', 
-                    self::MIN_LEVEL, 
-                    self::MAX_LEVEL, 
-                    $level
-                )
-            );
+            throw new DifficultyValidationException(sprintf('Difficulty level must be between %d and %d, %d given', self::MIN_LEVEL, self::MAX_LEVEL, $level));
         }
-
-        $this->level = $level;
     }
 
     public static function easy(): self

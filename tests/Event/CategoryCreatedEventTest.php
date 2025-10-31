@@ -4,16 +4,23 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Event;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitSymfonyUnitTest\AbstractEventTestCase;
 use Tourze\QuestionBankBundle\Entity\Category;
 use Tourze\QuestionBankBundle\Event\CategoryCreatedEvent;
 
-class CategoryCreatedEventTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(CategoryCreatedEvent::class)]
+final class CategoryCreatedEventTest extends AbstractEventTestCase
 {
-    public function test_constructor_setsCategory(): void
+    public function testConstructorSetsCategory(): void
     {
         // Arrange
-        $category = new Category('Programming', 'programming');
+        $category = new Category();
+        $category->setName('Programming');
+        $category->setCode('programming');
 
         // Act
         $event = new CategoryCreatedEvent($category);
@@ -22,11 +29,15 @@ class CategoryCreatedEventTest extends TestCase
         $this->assertSame($category, $event->getCategory());
     }
 
-    public function test_getCategory_returnsCorrectCategory(): void
+    public function testGetCategoryReturnsCorrectCategory(): void
     {
         // Arrange
-        $category1 = new Category('Math', 'math');
-        $category2 = new Category('Science', 'science');
+        $category1 = new Category();
+        $category1->setName('Math');
+        $category1->setCode('math');
+        $category2 = new Category();
+        $category2->setName('Science');
+        $category2->setCode('science');
 
         $event1 = new CategoryCreatedEvent($category1);
         $event2 = new CategoryCreatedEvent($category2);
@@ -37,10 +48,12 @@ class CategoryCreatedEventTest extends TestCase
         $this->assertNotSame($event1->getCategory(), $event2->getCategory());
     }
 
-    public function test_eventCarriesCategoryData(): void
+    public function testEventCarriesCategoryData(): void
     {
         // Arrange
-        $category = new Category('Database', 'database');
+        $category = new Category();
+        $category->setName('Database');
+        $category->setCode('database');
         $category->setDescription('Database related questions');
         $category->setSortOrder(10);
 
@@ -56,11 +69,15 @@ class CategoryCreatedEventTest extends TestCase
         $this->assertTrue($eventCategory->isValid());
     }
 
-    public function test_eventWithCategoryHierarchy(): void
+    public function testEventWithCategoryHierarchy(): void
     {
         // Arrange
-        $parent = new Category('Languages', 'languages');
-        $child = new Category('PHP', 'php');
+        $parent = new Category();
+        $parent->setName('Languages');
+        $parent->setCode('languages');
+        $child = new Category();
+        $child->setName('PHP');
+        $child->setCode('php');
         $child->setParent($parent);
 
         // Act

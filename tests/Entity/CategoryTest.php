@@ -4,14 +4,45 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Entity;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 use Tourze\QuestionBankBundle\Entity\Category;
+use Tourze\QuestionBankBundle\Exception\CategoryHierarchyException;
 
-class CategoryTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(Category::class)]
+final class CategoryTest extends AbstractEntityTestCase
 {
-    public function test_constructor_setsDefaultValues(): void
+    protected function createEntity(): object
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
+
+        return $category;
+    }
+
+    /**
+     * 提供属性及其样本值的 Data Provider.
+     *
+     * @return iterable<string, array{0: string, 1: mixed}>
+     */
+    public static function propertiesProvider(): iterable
+    {
+        yield 'name' => ['name', 'New Category Name'];
+        yield 'code' => ['code', 'new_category_code'];
+        yield 'description' => ['description', 'Test description for category'];
+        yield 'sortOrder' => ['sortOrder', 10];
+        yield 'valid' => ['valid', false];
+    }
+
+    public function testConstructorSetsDefaultValues(): void
+    {
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $this->assertEquals('Test Category', $category->getName());
         $this->assertEquals('test_category', $category->getCode());
@@ -27,18 +58,22 @@ class CategoryTest extends TestCase
         $this->assertInstanceOf(\DateTimeImmutable::class, $category->getUpdateTime());
     }
 
-    public function test_setName_updatesName(): void
+    public function testSetNameUpdatesName(): void
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $category->setName('New Name');
 
         $this->assertEquals('New Name', $category->getName());
     }
 
-    public function test_setCode_updatesCodeAndPath(): void
+    public function testSetCodeUpdatesCodeAndPath(): void
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $category->setCode('new_code');
 
@@ -46,37 +81,47 @@ class CategoryTest extends TestCase
         $this->assertEquals('/new_code', $category->getPath());
     }
 
-    public function test_setDescription_updatesDescription(): void
+    public function testSetDescriptionUpdatesDescription(): void
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $category->setDescription('Test Description');
 
         $this->assertEquals('Test Description', $category->getDescription());
     }
 
-    public function test_setSortOrder_updatesSortOrder(): void
+    public function testSetSortOrderUpdatesSortOrder(): void
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $category->setSortOrder(10);
 
         $this->assertEquals(10, $category->getSortOrder());
     }
 
-    public function test_setValid_updatesValidFlag(): void
+    public function testSetValidUpdatesValidFlag(): void
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $category->setValid(false);
 
         $this->assertFalse($category->isValid());
     }
 
-    public function test_setParent_updatesParentAndLevel(): void
+    public function testSetParentUpdatesParentAndLevel(): void
     {
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
 
         $child->setParent($parent);
 
@@ -85,35 +130,47 @@ class CategoryTest extends TestCase
         $this->assertEquals('/parent/child', $child->getPath());
     }
 
-    public function test_setParent_throwsExceptionWhenSettingSelfAsParent(): void
+    public function testSetParentThrowsExceptionWhenSettingSelfAsParent(): void
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
-        $this->expectException(\Tourze\QuestionBankBundle\Exception\CategoryHierarchyException::class);
+        $this->expectException(CategoryHierarchyException::class);
         $this->expectExceptionMessage('Category cannot be its own parent');
 
         $category->setParent($category);
     }
 
-    public function test_setParent_throwsExceptionWhenSettingDescendantAsParent(): void
+    public function testSetParentThrowsExceptionWhenSettingDescendantAsParent(): void
     {
-        $grandparent = new Category('Grandparent', 'grandparent');
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $grandparent = new Category();
+        $grandparent->setName('Grandparent');
+        $grandparent->setCode('grandparent');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
 
         $parent->setParent($grandparent);
         $child->setParent($parent);
 
-        $this->expectException(\Tourze\QuestionBankBundle\Exception\CategoryHierarchyException::class);
+        $this->expectException(CategoryHierarchyException::class);
         $this->expectExceptionMessage('Cannot set descendant as parent');
 
         $grandparent->setParent($child);
     }
 
-    public function test_addChild_addsChildAndSetsParent(): void
+    public function testAddChildAddsChildAndSetsParent(): void
     {
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
 
         $parent->addChild($child);
 
@@ -122,10 +179,14 @@ class CategoryTest extends TestCase
         $this->assertEquals($parent, $child->getParent());
     }
 
-    public function test_addChild_doesNotAddDuplicateChild(): void
+    public function testAddChildDoesNotAddDuplicateChild(): void
     {
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
 
         $parent->addChild($child);
         $parent->addChild($child); // 添加重复子分类
@@ -133,10 +194,14 @@ class CategoryTest extends TestCase
         $this->assertCount(1, $parent->getChildren());
     }
 
-    public function test_removeChild_removesChildAndClearsParent(): void
+    public function testRemoveChildRemovesChildAndClearsParent(): void
     {
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
         $parent->addChild($child);
 
         $parent->removeChild($child);
@@ -146,11 +211,17 @@ class CategoryTest extends TestCase
         $this->assertNull($child->getParent());
     }
 
-    public function test_isAncestorOf_returnsTrueForDescendant(): void
+    public function testIsAncestorOfReturnsTrueForDescendant(): void
     {
-        $grandparent = new Category('Grandparent', 'grandparent');
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $grandparent = new Category();
+        $grandparent->setName('Grandparent');
+        $grandparent->setCode('grandparent');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
 
         $parent->setParent($grandparent);
         $child->setParent($parent);
@@ -160,18 +231,26 @@ class CategoryTest extends TestCase
         $this->assertFalse($child->isAncestorOf($grandparent));
     }
 
-    public function test_isAncestorOf_returnsFalseForSelf(): void
+    public function testIsAncestorOfReturnsFalseForSelf(): void
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $this->assertFalse($category->isAncestorOf($category));
     }
 
-    public function test_isDescendantOf_returnsTrueForAncestor(): void
+    public function testIsDescendantOfReturnsTrueForAncestor(): void
     {
-        $grandparent = new Category('Grandparent', 'grandparent');
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $grandparent = new Category();
+        $grandparent->setName('Grandparent');
+        $grandparent->setCode('grandparent');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
 
         $parent->setParent($grandparent);
         $child->setParent($parent);
@@ -181,11 +260,17 @@ class CategoryTest extends TestCase
         $this->assertFalse($grandparent->isDescendantOf($child));
     }
 
-    public function test_getAncestors_returnsAncestorsInOrder(): void
+    public function testGetAncestorsReturnsAncestorsInOrder(): void
     {
-        $grandparent = new Category('Grandparent', 'grandparent');
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $grandparent = new Category();
+        $grandparent->setName('Grandparent');
+        $grandparent->setCode('grandparent');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
 
         $parent->setParent($grandparent);
         $child->setParent($parent);
@@ -197,20 +282,28 @@ class CategoryTest extends TestCase
         $this->assertEquals($parent, $ancestors[1]);
     }
 
-    public function test_getAncestors_returnsEmptyArrayForRootCategory(): void
+    public function testGetAncestorsReturnsEmptyArrayForRootCategory(): void
     {
-        $category = new Category('Root', 'root');
+        $category = new Category();
+        $category->setName('Root');
+        $category->setCode('root');
 
         $ancestors = $category->getAncestors();
 
         $this->assertCount(0, $ancestors);
     }
 
-    public function test_getFullPath_returnsCompletePathIncludingSelf(): void
+    public function testGetFullPathReturnsCompletePathIncludingSelf(): void
     {
-        $grandparent = new Category('Grandparent', 'grandparent');
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
+        $grandparent = new Category();
+        $grandparent->setName('Grandparent');
+        $grandparent->setCode('grandparent');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
 
         $parent->setParent($grandparent);
         $child->setParent($parent);
@@ -223,18 +316,26 @@ class CategoryTest extends TestCase
         $this->assertEquals($child, $fullPath[2]);
     }
 
-    public function test_toString_returnsName(): void
+    public function testToStringReturnsName(): void
     {
-        $category = new Category('Test Category', 'test_category');
+        $category = new Category();
+        $category->setName('Test Category');
+        $category->setCode('test_category');
 
         $this->assertEquals('Test Category', (string) $category);
     }
 
-    public function test_hierarchicalPathUpdate_withParentRelationshipChanges(): void
+    public function testHierarchicalPathUpdateWithParentRelationshipChanges(): void
     {
-        $parent = new Category('Parent', 'parent');
-        $child = new Category('Child', 'child');
-        $grandchild = new Category('Grandchild', 'grandchild');
+        $parent = new Category();
+        $parent->setName('Parent');
+        $parent->setCode('parent');
+        $child = new Category();
+        $child->setName('Child');
+        $child->setCode('child');
+        $grandchild = new Category();
+        $grandchild->setName('Grandchild');
+        $grandchild->setCode('grandchild');
 
         // 验证独立创建的分类路径
         $this->assertEquals('/parent', $parent->getPath());
@@ -254,11 +355,17 @@ class CategoryTest extends TestCase
         $this->assertEquals('/child/grandchild', $grandchild->getPath());
     }
 
-    public function test_hierarchicalLevelUpdate_updatesChildrenLevels(): void
+    public function testHierarchicalLevelUpdateUpdatesChildrenLevels(): void
     {
-        $root = new Category('Root', 'root');
-        $level1 = new Category('Level1', 'level1');
-        $level2 = new Category('Level2', 'level2');
+        $root = new Category();
+        $root->setName('Root');
+        $root->setCode('root');
+        $level1 = new Category();
+        $level1->setName('Level1');
+        $level1->setCode('level1');
+        $level2 = new Category();
+        $level2->setName('Level2');
+        $level2->setCode('level2');
 
         // 验证初始层级
         $this->assertEquals(0, $root->getLevel());

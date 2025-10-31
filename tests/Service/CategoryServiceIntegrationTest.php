@@ -4,18 +4,29 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Service;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\Uid\Uuid;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 use Tourze\QuestionBankBundle\DTO\CategoryDTO;
 use Tourze\QuestionBankBundle\Exception\CategoryNotFoundException;
 use Tourze\QuestionBankBundle\Exception\ValidationException;
 use Tourze\QuestionBankBundle\Service\CategoryService;
-use Tourze\QuestionBankBundle\Tests\BaseIntegrationTestCase;
 
-class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
+/**
+ * @internal
+ */
+#[CoversClass(CategoryService::class)]
+#[RunTestsInSeparateProcesses]
+final class CategoryServiceIntegrationTest extends AbstractIntegrationTestCase
 {
-    private CategoryService $categoryService;
+    protected function onSetUp(): void
+    {
+        // 清理测试数据，确保测试隔离
+        self::getEntityManager()->createQuery('DELETE FROM Tourze\QuestionBankBundle\Entity\Category c')->execute();
+    }
 
-    public function test_createCategory_withValidData_createsCategory(): void
+    public function testCreateCategoryWithValidDataCreatesCategory(): void
     {
         // Arrange
         $dto = new CategoryDTO();
@@ -26,7 +37,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $dto->isActive = true;
 
         // Act
-        $category = $this->categoryService->createCategory($dto);
+        $category = self::getService(CategoryService::class)->createCategory($dto);
 
         // Assert
         $this->assertNotNull($category->getId());
@@ -37,7 +48,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertTrue($category->isValid());
     }
 
-    public function test_createCategory_withParent_setsParentCorrectly(): void
+    public function testCreateCategoryWithParentSetsParentCorrectly(): void
     {
         // Arrange
         $parentDto = new CategoryDTO();
@@ -46,7 +57,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $parentDto->sortOrder = 5;
         $parentDto->isActive = true;
 
-        $parent = $this->categoryService->createCategory($parentDto);
+        $parent = self::getService(CategoryService::class)->createCategory($parentDto);
 
         $childDto = new CategoryDTO();
         $childDto->name = 'Programming';
@@ -56,7 +67,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $childDto->parentId = (string) $parent->getId();
 
         // Act
-        $child = $this->categoryService->createCategory($childDto);
+        $child = self::getService(CategoryService::class)->createCategory($childDto);
 
         // Assert
         $this->assertNotNull($child->getParent());
@@ -64,7 +75,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertEquals('Technology', $child->getParent()->getName());
     }
 
-    public function test_createCategory_withDuplicateCode_throwsValidationException(): void
+    public function testCreateCategoryWithDuplicateCodeThrowsValidationException(): void
     {
         // Arrange
         $dto1 = new CategoryDTO();
@@ -79,15 +90,15 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $dto2->sortOrder = 20;
         $dto2->isActive = true;
 
-        $this->categoryService->createCategory($dto1);
+        self::getService(CategoryService::class)->createCategory($dto1);
 
         // Act & Assert
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Category with code "programming" already exists');
-        $this->categoryService->createCategory($dto2);
+        self::getService(CategoryService::class)->createCategory($dto2);
     }
 
-    public function test_updateCategory_withValidData_updatesCategory(): void
+    public function testUpdateCategoryWithValidDataUpdatesCategory(): void
     {
         // Arrange
         $dto = new CategoryDTO();
@@ -96,7 +107,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $dto->sortOrder = 10;
         $dto->isActive = true;
 
-        $category = $this->categoryService->createCategory($dto);
+        $category = self::getService(CategoryService::class)->createCategory($dto);
 
         $updateDto = new CategoryDTO();
         $updateDto->name = 'Software Development';
@@ -106,7 +117,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $updateDto->isActive = false;
 
         // Act
-        $updatedCategory = $this->categoryService->updateCategory((string) $category->getId(), $updateDto);
+        $updatedCategory = self::getService(CategoryService::class)->updateCategory((string) $category->getId(), $updateDto);
 
         // Assert
         $this->assertEquals('Software Development', $updatedCategory->getName());
@@ -116,7 +127,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertFalse($updatedCategory->isValid());
     }
 
-    public function test_updateCategory_withDuplicateCode_throwsValidationException(): void
+    public function testUpdateCategoryWithDuplicateCodeThrowsValidationException(): void
     {
         // Arrange
         $dto1 = new CategoryDTO();
@@ -131,8 +142,8 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $dto2->sortOrder = 20;
         $dto2->isActive = true;
 
-        $category1 = $this->categoryService->createCategory($dto1);
-        $category2 = $this->categoryService->createCategory($dto2);
+        $category1 = self::getService(CategoryService::class)->createCategory($dto1);
+        $category2 = self::getService(CategoryService::class)->createCategory($dto2);
 
         $updateDto = new CategoryDTO();
         $updateDto->name = 'Database Updated';
@@ -143,10 +154,10 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         // Act & Assert
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Category with code "programming" already exists');
-        $this->categoryService->updateCategory((string) $category2->getId(), $updateDto);
+        self::getService(CategoryService::class)->updateCategory((string) $category2->getId(), $updateDto);
     }
 
-    public function test_deleteCategory_withValidCategory_deletesCategory(): void
+    public function testDeleteCategoryWithValidCategoryDeletesCategory(): void
     {
         // Arrange
         $dto = new CategoryDTO();
@@ -155,18 +166,18 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $dto->sortOrder = 10;
         $dto->isActive = true;
 
-        $category = $this->categoryService->createCategory($dto);
+        $category = self::getService(CategoryService::class)->createCategory($dto);
         $id = $category->getId();
 
         // Act
-        $this->categoryService->deleteCategory((string) $id);
+        self::getService(CategoryService::class)->deleteCategory((string) $id);
 
         // Assert
         $this->expectException(CategoryNotFoundException::class);
-        $this->categoryService->findCategory((string) $id);
+        self::getService(CategoryService::class)->findCategory((string) $id);
     }
 
-    public function test_deleteCategory_withChildren_throwsValidationException(): void
+    public function testDeleteCategoryWithChildrenThrowsValidationException(): void
     {
         // Arrange
         $parentDto = new CategoryDTO();
@@ -175,7 +186,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $parentDto->sortOrder = 5;
         $parentDto->isActive = true;
 
-        $parent = $this->categoryService->createCategory($parentDto);
+        $parent = self::getService(CategoryService::class)->createCategory($parentDto);
 
         $childDto = new CategoryDTO();
         $childDto->name = 'Programming';
@@ -184,15 +195,15 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $childDto->isActive = true;
         $childDto->parentId = (string) $parent->getId();
 
-        $this->categoryService->createCategory($childDto);
+        self::getService(CategoryService::class)->createCategory($childDto);
 
         // Act & Assert
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Cannot delete category with children');
-        $this->categoryService->deleteCategory((string) $parent->getId());
+        self::getService(CategoryService::class)->deleteCategory((string) $parent->getId());
     }
 
-    public function test_findCategory_withValidId_returnsCategory(): void
+    public function testFindCategoryWithValidIdReturnsCategory(): void
     {
         // Arrange
         $dto = new CategoryDTO();
@@ -201,27 +212,27 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $dto->sortOrder = 10;
         $dto->isActive = true;
 
-        $created = $this->categoryService->createCategory($dto);
+        $created = self::getService(CategoryService::class)->createCategory($dto);
 
         // Act
-        $found = $this->categoryService->findCategory((string) $created->getId());
+        $found = self::getService(CategoryService::class)->findCategory((string) $created->getId());
 
         // Assert
         $this->assertEquals($created->getId(), $found->getId());
         $this->assertEquals('Programming', $found->getName());
     }
 
-    public function test_findCategory_withInvalidId_throwsNotFoundException(): void
+    public function testFindCategoryWithInvalidIdThrowsNotFoundException(): void
     {
         // Arrange - 使用有效的 UUID 格式但不存在的 ID
         $nonExistentId = Uuid::v7();
 
         // Act & Assert
         $this->expectException(CategoryNotFoundException::class);
-        $this->categoryService->findCategory((string) $nonExistentId);
+        self::getService(CategoryService::class)->findCategory((string) $nonExistentId);
     }
 
-    public function test_moveCategory_toNewParent_updatesParent(): void
+    public function testMoveCategoryToNewParentUpdatesParent(): void
     {
         // Arrange
         $parentDto = new CategoryDTO();
@@ -242,24 +253,24 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $childDto->sortOrder = 10;
         $childDto->isActive = true;
 
-        $parent = $this->categoryService->createCategory($parentDto);
-        $newParent = $this->categoryService->createCategory($newParentDto);
-        $child = $this->categoryService->createCategory($childDto);
+        $parent = self::getService(CategoryService::class)->createCategory($parentDto);
+        $newParent = self::getService(CategoryService::class)->createCategory($newParentDto);
+        $child = self::getService(CategoryService::class)->createCategory($childDto);
 
         $child->setParent($parent);
-        $this->entityManager->persist($child);
-        $this->entityManager->flush();
+        self::getEntityManager()->persist($child);
+        self::getEntityManager()->flush();
 
         // Act
-        $this->categoryService->moveCategory((string) $child->getId(), (string) $newParent->getId());
+        self::getService(CategoryService::class)->moveCategory((string) $child->getId(), (string) $newParent->getId());
 
         // Assert
-        $this->entityManager->refresh($child);
+        self::getEntityManager()->refresh($child);
         $this->assertNotNull($child->getParent());
         $this->assertEquals($newParent->getId(), $child->getParent()->getId());
     }
 
-    public function test_moveCategory_toRoot_removesParent(): void
+    public function testMoveCategoryToRootRemovesParent(): void
     {
         // Arrange
         $parentDto = new CategoryDTO();
@@ -274,22 +285,22 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $childDto->sortOrder = 10;
         $childDto->isActive = true;
 
-        $parent = $this->categoryService->createCategory($parentDto);
-        $child = $this->categoryService->createCategory($childDto);
+        $parent = self::getService(CategoryService::class)->createCategory($parentDto);
+        $child = self::getService(CategoryService::class)->createCategory($childDto);
 
         $child->setParent($parent);
-        $this->entityManager->persist($child);
-        $this->entityManager->flush();
+        self::getEntityManager()->persist($child);
+        self::getEntityManager()->flush();
 
         // Act
-        $this->categoryService->moveCategory((string) $child->getId(), null);
+        self::getService(CategoryService::class)->moveCategory((string) $child->getId(), null);
 
         // Assert
-        $this->entityManager->refresh($child);
+        self::getEntityManager()->refresh($child);
         $this->assertNull($child->getParent());
     }
 
-    public function test_getCategoryTree_returnsHierarchicalStructure(): void
+    public function testGetCategoryTreeReturnsHierarchicalStructure(): void
     {
         // Arrange
         $parentDto = new CategoryDTO();
@@ -298,7 +309,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $parentDto->sortOrder = 5;
         $parentDto->isActive = true;
 
-        $parent = $this->categoryService->createCategory($parentDto);
+        $parent = self::getService(CategoryService::class)->createCategory($parentDto);
 
         $childDto = new CategoryDTO();
         $childDto->name = 'Programming';
@@ -307,16 +318,16 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $childDto->isActive = true;
         $childDto->parentId = (string) $parent->getId();
 
-        $this->categoryService->createCategory($childDto);
+        self::getService(CategoryService::class)->createCategory($childDto);
 
         // Act
-        $tree = $this->categoryService->getCategoryTree();
+        $tree = self::getService(CategoryService::class)->getCategoryTree();
 
         // Assert
         $this->assertNotEmpty($tree);
     }
 
-    public function test_findCategoryByCode_withExistingCode_returnsCategory(): void
+    public function testFindCategoryByCodeWithExistingCodeReturnsCategory(): void
     {
         // Arrange
         $dto = new CategoryDTO();
@@ -325,10 +336,10 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $dto->sortOrder = 10;
         $dto->isActive = true;
 
-        $created = $this->categoryService->createCategory($dto);
+        $created = self::getService(CategoryService::class)->createCategory($dto);
 
         // Act
-        $found = $this->categoryService->findCategoryByCode('programming');
+        $found = self::getService(CategoryService::class)->findCategoryByCode('programming');
 
         // Assert
         $this->assertNotNull($found);
@@ -336,16 +347,16 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertEquals('programming', $found->getCode());
     }
 
-    public function test_findCategoryByCode_withNonExistentCode_returnsNull(): void
+    public function testFindCategoryByCodeWithNonExistentCodeReturnsNull(): void
     {
         // Act
-        $result = $this->categoryService->findCategoryByCode('non-existent');
+        $result = self::getService(CategoryService::class)->findCategoryByCode('non-existent');
 
         // Assert
         $this->assertNull($result);
     }
 
-    public function test_getCategoryPath_returnsFullPath(): void
+    public function testGetCategoryPathReturnsFullPath(): void
     {
         // Arrange
         $parentDto = new CategoryDTO();
@@ -354,7 +365,7 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $parentDto->sortOrder = 5;
         $parentDto->isActive = true;
 
-        $parent = $this->categoryService->createCategory($parentDto);
+        $parent = self::getService(CategoryService::class)->createCategory($parentDto);
 
         $childDto = new CategoryDTO();
         $childDto->name = 'Programming';
@@ -363,20 +374,14 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTestCase
         $childDto->isActive = true;
         $childDto->parentId = (string) $parent->getId();
 
-        $child = $this->categoryService->createCategory($childDto);
+        $child = self::getService(CategoryService::class)->createCategory($childDto);
 
         // Act
-        $path = $this->categoryService->getCategoryPath((string) $child->getId());
+        $path = self::getService(CategoryService::class)->getCategoryPath((string) $child->getId());
 
         // Assert
         $this->assertCount(2, $path);
         $this->assertEquals('Technology', $path[0]->getName());
         $this->assertEquals('Programming', $path[1]->getName());
-    }
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->categoryService = $this->container->get(CategoryService::class);
     }
 }

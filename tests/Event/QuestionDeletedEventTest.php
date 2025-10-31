@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Event;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Uid\Uuid;
+use Tourze\PHPUnitSymfonyUnitTest\AbstractEventTestCase;
 use Tourze\QuestionBankBundle\Event\QuestionDeletedEvent;
 
-class QuestionDeletedEventTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(QuestionDeletedEvent::class)]
+final class QuestionDeletedEventTest extends AbstractEventTestCase
 {
-    public function test_constructor_setsQuestionId(): void
+    public function testConstructorSetsQuestionId(): void
     {
         // Arrange
         $questionId = (string) Uuid::v7();
@@ -22,7 +27,7 @@ class QuestionDeletedEventTest extends TestCase
         $this->assertEquals($questionId, $event->getQuestionId());
     }
 
-    public function test_getQuestionId_returnsCorrectId(): void
+    public function testGetQuestionIdReturnsCorrectId(): void
     {
         // Arrange
         $id1 = (string) Uuid::v7();
@@ -37,21 +42,21 @@ class QuestionDeletedEventTest extends TestCase
         $this->assertNotEquals($event1->getQuestionId(), $event2->getQuestionId());
     }
 
-    public function test_multipleEvents_haveDifferentIds(): void
+    public function testMultipleEventsHaveDifferentIds(): void
     {
         // Arrange
         $ids = [];
         $events = [];
 
         // Create multiple events
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 5; ++$i) {
             $id = (string) Uuid::v7();
             $ids[] = $id;
             $events[] = new QuestionDeletedEvent($id);
         }
 
         // Act & Assert - Each event should have its corresponding ID
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 5; ++$i) {
             $this->assertEquals($ids[$i], $events[$i]->getQuestionId());
         }
     }

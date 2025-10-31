@@ -4,14 +4,20 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
+use Tourze\QuestionBankBundle\Exception\QuestionBankException;
 use Tourze\QuestionBankBundle\Exception\ValidationException;
 
-class ValidationExceptionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(ValidationException::class)]
+final class ValidationExceptionTest extends AbstractExceptionTestCase
 {
-    public function test_constructor_withSingleViolation_createsProperMessage(): void
+    public function testConstructorWithSingleViolationCreatesProperMessage(): void
     {
         $violations = new ConstraintViolationList();
         $violation = new ConstraintViolation(
@@ -30,7 +36,7 @@ class ValidationExceptionTest extends TestCase
         $this->assertEquals($violations, $exception->getViolations());
     }
 
-    public function test_constructor_withMultipleViolations_concatenatesMessages(): void
+    public function testConstructorWithMultipleViolationsConcatenatesMessages(): void
     {
         $violations = new ConstraintViolationList();
 
@@ -63,7 +69,7 @@ class ValidationExceptionTest extends TestCase
         $this->assertEquals($violations, $exception->getViolations());
     }
 
-    public function test_constructor_withEmptyViolations_createsEmptyMessage(): void
+    public function testConstructorWithEmptyViolationsCreatesEmptyMessage(): void
     {
         $violations = new ConstraintViolationList();
 
@@ -73,7 +79,7 @@ class ValidationExceptionTest extends TestCase
         $this->assertEquals($violations, $exception->getViolations());
     }
 
-    public function test_getViolations_returnsOriginalViolations(): void
+    public function testGetViolationsReturnsOriginalViolations(): void
     {
         $violations = new ConstraintViolationList();
         $violation = new ConstraintViolation(
@@ -95,15 +101,15 @@ class ValidationExceptionTest extends TestCase
         $this->assertEquals('testProperty', $returnedViolations[0]->getPropertyPath());
     }
 
-    public function test_inheritance_extendsQuestionBankException(): void
+    public function testInheritanceExtendsQuestionBankException(): void
     {
         $violations = new ConstraintViolationList();
         $exception = new ValidationException($violations);
 
-        $this->assertInstanceOf(\Tourze\QuestionBankBundle\Exception\QuestionBankException::class, $exception);
+        $this->assertInstanceOf(QuestionBankException::class, $exception);
     }
 
-    public function test_constructor_withComplexViolationData(): void
+    public function testConstructorWithComplexViolationData(): void
     {
         $violations = new ConstraintViolationList();
         $violation = new ConstraintViolation(

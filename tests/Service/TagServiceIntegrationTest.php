@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Service;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\Uid\Uuid;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 use Tourze\QuestionBankBundle\DTO\TagDTO;
 use Tourze\QuestionBankBundle\Entity\Question;
 use Tourze\QuestionBankBundle\Entity\Tag;
@@ -12,14 +15,16 @@ use Tourze\QuestionBankBundle\Enum\QuestionType;
 use Tourze\QuestionBankBundle\Exception\TagNotFoundException;
 use Tourze\QuestionBankBundle\Exception\ValidationException;
 use Tourze\QuestionBankBundle\Service\TagService;
-use Tourze\QuestionBankBundle\Tests\BaseIntegrationTestCase;
 use Tourze\QuestionBankBundle\ValueObject\Difficulty;
 
-class TagServiceIntegrationTest extends BaseIntegrationTestCase
+/**
+ * @internal
+ */
+#[CoversClass(TagService::class)]
+#[RunTestsInSeparateProcesses]
+final class TagServiceIntegrationTest extends AbstractIntegrationTestCase
 {
-    private TagService $tagService;
-
-    public function test_createTag_withValidData_createsTag(): void
+    public function testCreateTagWithValidDataCreatesTag(): void
     {
         // Arrange
         $dto = new TagDTO();
@@ -29,7 +34,7 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $dto->color = '#787CB5';
 
         // Act
-        $tag = $this->tagService->createTag($dto);
+        $tag = self::getService(TagService::class)->createTag($dto);
 
         // Assert
         $this->assertNotNull($tag->getId());
@@ -40,21 +45,21 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertEquals(0, $tag->getUsageCount());
     }
 
-    public function test_createTag_withoutSlug_generatesSlugFromName(): void
+    public function testCreateTagWithoutSlugGeneratesSlugFromName(): void
     {
         // Arrange
         $dto = new TagDTO();
         $dto->name = 'Object Oriented Programming';
 
         // Act
-        $tag = $this->tagService->createTag($dto);
+        $tag = self::getService(TagService::class)->createTag($dto);
 
         // Assert
         $this->assertEquals('Object Oriented Programming', $tag->getName());
         $this->assertEquals('object-oriented-programming', $tag->getSlug());
     }
 
-    public function test_createTag_withDuplicateSlug_throwsValidationException(): void
+    public function testCreateTagWithDuplicateSlugThrowsValidationException(): void
     {
         // Arrange
         $dto1 = new TagDTO();
@@ -65,22 +70,22 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $dto2->name = 'PHP Programming';
         $dto2->slug = 'php'; // 重复的 slug
 
-        $this->tagService->createTag($dto1);
+        self::getService(TagService::class)->createTag($dto1);
 
         // Act & Assert
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Tag with slug "php" already exists');
-        $this->tagService->createTag($dto2);
+        self::getService(TagService::class)->createTag($dto2);
     }
 
-    public function test_updateTag_withValidData_updatesTag(): void
+    public function testUpdateTagWithValidDataUpdatesTag(): void
     {
         // Arrange
         $dto = new TagDTO();
         $dto->name = 'PHP';
         $dto->slug = 'php';
 
-        $tag = $this->tagService->createTag($dto);
+        $tag = self::getService(TagService::class)->createTag($dto);
 
         $updateDto = new TagDTO();
         $updateDto->name = 'PHP Language';
@@ -89,7 +94,7 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $updateDto->color = '#FF0000';
 
         // Act
-        $updatedTag = $this->tagService->updateTag((string) $tag->getId(), $updateDto);
+        $updatedTag = self::getService(TagService::class)->updateTag((string) $tag->getId(), $updateDto);
 
         // Assert
         $this->assertEquals('PHP Language', $updatedTag->getName());
@@ -98,7 +103,7 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertEquals('#FF0000', $updatedTag->getColor());
     }
 
-    public function test_updateTag_withDuplicateSlug_throwsValidationException(): void
+    public function testUpdateTagWithDuplicateSlugThrowsValidationException(): void
     {
         // Arrange
         $dto1 = new TagDTO();
@@ -109,8 +114,8 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $dto2->name = 'Java';
         $dto2->slug = 'java';
 
-        $tag1 = $this->tagService->createTag($dto1);
-        $tag2 = $this->tagService->createTag($dto2);
+        $tag1 = self::getService(TagService::class)->createTag($dto1);
+        $tag2 = self::getService(TagService::class)->createTag($dto2);
 
         $updateDto = new TagDTO();
         $updateDto->name = 'Java Updated';
@@ -119,101 +124,100 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         // Act & Assert
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Tag with slug "php" already exists');
-        $this->tagService->updateTag((string) $tag2->getId(), $updateDto);
+        self::getService(TagService::class)->updateTag((string) $tag2->getId(), $updateDto);
     }
 
-    public function test_deleteTag_withUnusedTag_deletesTag(): void
+    public function testDeleteTagWithUnusedTagDeletesTag(): void
     {
         // Arrange
         $dto = new TagDTO();
         $dto->name = 'PHP';
         $dto->slug = 'php';
 
-        $tag = $this->tagService->createTag($dto);
+        $tag = self::getService(TagService::class)->createTag($dto);
         $id = $tag->getId();
 
         // Act
-        $this->tagService->deleteTag((string) $id);
+        self::getService(TagService::class)->deleteTag((string) $id);
 
         // Assert
         $this->expectException(TagNotFoundException::class);
-        $this->tagService->findTag((string) $id);
+        self::getService(TagService::class)->findTag((string) $id);
     }
 
-    public function test_deleteTag_withUsedTag_throwsValidationException(): void
+    public function testDeleteTagWithUsedTagThrowsValidationException(): void
     {
         // Arrange
         $dto = new TagDTO();
         $dto->name = 'PHP';
         $dto->slug = 'php';
 
-        $tag = $this->tagService->createTag($dto);
+        $tag = self::getService(TagService::class)->createTag($dto);
 
         // 创建一个问题并添加标签
-        $question = new Question(
-            'Test Question',
-            'Test content',
-            QuestionType::SINGLE_CHOICE,
-            new Difficulty(3)
-        );
+        $question = new Question();
+        $question->setTitle('Test Question');
+        $question->setContent('Test content');
+        $question->setType(QuestionType::SINGLE_CHOICE);
+        $question->setDifficulty(new Difficulty(3));
         $question->addTag($tag);
-        $this->entityManager->persist($question);
-        $this->entityManager->flush();
+        self::getEntityManager()->persist($question);
+        self::getEntityManager()->flush();
 
         // Act & Assert
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Tag is used by 1 questions');
-        $this->tagService->deleteTag((string) $tag->getId());
+        self::getService(TagService::class)->deleteTag((string) $tag->getId());
     }
 
-    public function test_findTag_withValidId_returnsTag(): void
+    public function testFindTagWithValidIdReturnsTag(): void
     {
         // Arrange
         $dto = new TagDTO();
         $dto->name = 'PHP';
         $dto->slug = 'php';
 
-        $created = $this->tagService->createTag($dto);
+        $created = self::getService(TagService::class)->createTag($dto);
 
         // Act
-        $found = $this->tagService->findTag((string) $created->getId());
+        $found = self::getService(TagService::class)->findTag((string) $created->getId());
 
         // Assert
         $this->assertEquals($created->getId(), $found->getId());
         $this->assertEquals('PHP', $found->getName());
     }
 
-    public function test_findTag_withInvalidId_throwsNotFoundException(): void
+    public function testFindTagWithInvalidIdThrowsNotFoundException(): void
     {
         // Arrange - 使用有效的 UUID 格式但不存在的 ID
         $nonExistentId = Uuid::v7();
 
         // Act & Assert
         $this->expectException(TagNotFoundException::class);
-        $this->tagService->findTag((string) $nonExistentId);
+        self::getService(TagService::class)->findTag((string) $nonExistentId);
     }
 
-    public function test_findOrCreateTag_withExistingTag_returnsExistingTag(): void
+    public function testFindOrCreateTagWithExistingTagReturnsExistingTag(): void
     {
         // Arrange
         $dto = new TagDTO();
         $dto->name = 'PHP';
         $dto->slug = 'php';
 
-        $existing = $this->tagService->createTag($dto);
+        $existing = self::getService(TagService::class)->createTag($dto);
 
         // Act
-        $found = $this->tagService->findOrCreateTag('PHP');
+        $found = self::getService(TagService::class)->findOrCreateTag('PHP');
 
         // Assert
         $this->assertEquals($existing->getId(), $found->getId());
         $this->assertEquals('PHP', $found->getName());
     }
 
-    public function test_findOrCreateTag_withNewTag_createsNewTag(): void
+    public function testFindOrCreateTagWithNewTagCreatesNewTag(): void
     {
         // Act
-        $tag = $this->tagService->findOrCreateTag('JavaScript');
+        $tag = self::getService(TagService::class)->findOrCreateTag('JavaScript');
 
         // Assert
         $this->assertNotNull($tag->getId());
@@ -221,7 +225,7 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertEquals('javascript', $tag->getSlug());
     }
 
-    public function test_getPopularTags_returnsTagsByUsage(): void
+    public function testGetPopularTagsReturnsTagsByUsage(): void
     {
         // Arrange
         $tag1 = $this->createTagWithUsage('PHP', 5);
@@ -229,7 +233,7 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $tag3 = $this->createTagWithUsage('Python', 7);
 
         // Act
-        $popularTags = $this->tagService->getPopularTags(3);
+        $popularTags = self::getService(TagService::class)->getPopularTags(3);
 
         // Assert
         $this->assertCount(3, $popularTags);
@@ -241,7 +245,7 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
     private function createTagWithUsage(string $name, int $usageCount): Tag
     {
         $dto = TagDTO::create($name);
-        $tag = $this->tagService->createTag($dto);
+        $tag = self::getService(TagService::class)->createTag($dto);
 
         // 直接设置使用计数（用于测试）
         $reflection = new \ReflectionClass($tag);
@@ -249,13 +253,13 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $usageProperty->setAccessible(true);
         $usageProperty->setValue($tag, $usageCount);
 
-        $this->entityManager->persist($tag);
-        $this->entityManager->flush();
+        self::getEntityManager()->persist($tag);
+        self::getEntityManager()->flush();
 
         return $tag;
     }
 
-    public function test_mergeTag_withValidTags_mergesTags(): void
+    public function testMergeTagWithValidTagsMergesTags(): void
     {
         // Arrange
         $sourceTag = $this->createTagWithUsage('JavaScript', 2);
@@ -270,77 +274,76 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $targetId = $targetTag->getId();
 
         // Act
-        $this->tagService->mergeTag((string) $sourceId, (string) $targetId);
+        self::getService(TagService::class)->mergeTag($sourceId, $targetId);
 
         // Assert
         $this->expectException(TagNotFoundException::class);
-        $this->tagService->findTag((string) $sourceId); // 源标签应该被删除
+        self::getService(TagService::class)->findTag($sourceId); // 源标签应该被删除
 
         // 目标标签应该包含所有问题
-        $updatedTargetTag = $this->tagService->findTag((string) $targetId);
+        $updatedTargetTag = self::getService(TagService::class)->findTag($targetId);
         $this->assertEquals(3, $updatedTargetTag->getUsageCount());
     }
 
     private function createQuestionWithTag(string $title, Tag $tag): Question
     {
-        $question = new Question(
-            $title,
-            'Test content',
-            QuestionType::SINGLE_CHOICE,
-            new Difficulty(3)
-        );
+        $question = new Question();
+        $question->setTitle($title);
+        $question->setContent('Test content');
+        $question->setType(QuestionType::SINGLE_CHOICE);
+        $question->setDifficulty(new Difficulty(3));
         $question->addTag($tag);
-        $this->entityManager->persist($question);
-        $this->entityManager->flush();
+        self::getEntityManager()->persist($question);
+        self::getEntityManager()->flush();
 
         return $question;
     }
 
-    public function test_mergeTag_withSameTag_throwsValidationException(): void
+    public function testMergeTagWithSameTagThrowsValidationException(): void
     {
         // Arrange
         $dto = new TagDTO();
         $dto->name = 'PHP';
         $dto->slug = 'php';
 
-        $tag = $this->tagService->createTag($dto);
+        $tag = self::getService(TagService::class)->createTag($dto);
         $id = $tag->getId();
 
         // Act & Assert
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Cannot merge tag with itself');
-        $this->tagService->mergeTag((string) $id, (string) $id);
+        self::getService(TagService::class)->mergeTag((string) $id, (string) $id);
     }
 
-    public function test_searchTags_withKeyword_returnsMatchingTags(): void
+    public function testSearchTagsWithKeywordReturnsMatchingTags(): void
     {
         // Arrange
-        $this->tagService->createTag(TagDTO::create('PHP'));
-        $this->tagService->createTag(TagDTO::create('PHP Framework'));
-        $this->tagService->createTag(TagDTO::create('Java'));
-        $this->tagService->createTag(TagDTO::create('JavaScript'));
+        self::getService(TagService::class)->createTag(TagDTO::create('PHP'));
+        self::getService(TagService::class)->createTag(TagDTO::create('PHP Framework'));
+        self::getService(TagService::class)->createTag(TagDTO::create('Java'));
+        self::getService(TagService::class)->createTag(TagDTO::create('JavaScript'));
 
         // Act
-        $results = $this->tagService->searchTags('PHP', 10);
+        $results = self::getService(TagService::class)->searchTags('PHP', 10);
 
         // Assert
         $this->assertCount(2, $results);
-        $names = array_map(fn($tag) => $tag->getName(), $results);
+        $names = array_map(fn ($tag) => $tag->getName(), $results);
         $this->assertContains('PHP', $names);
         $this->assertContains('PHP Framework', $names);
     }
 
-    public function test_findTagBySlug_withExistingSlug_returnsTag(): void
+    public function testFindTagBySlugWithExistingSlugReturnsTag(): void
     {
         // Arrange
         $dto = new TagDTO();
         $dto->name = 'PHP';
         $dto->slug = 'php';
 
-        $created = $this->tagService->createTag($dto);
+        $created = self::getService(TagService::class)->createTag($dto);
 
         // Act
-        $found = $this->tagService->findTagBySlug('php');
+        $found = self::getService(TagService::class)->findTagBySlug('php');
 
         // Assert
         $this->assertNotNull($found);
@@ -348,18 +351,18 @@ class TagServiceIntegrationTest extends BaseIntegrationTestCase
         $this->assertEquals('php', $found->getSlug());
     }
 
-    public function test_findTagBySlug_withNonExistentSlug_returnsNull(): void
+    public function testFindTagBySlugWithNonExistentSlugReturnsNull(): void
     {
         // Act
-        $result = $this->tagService->findTagBySlug('non-existent');
+        $result = self::getService(TagService::class)->findTagBySlug('non-existent');
 
         // Assert
         $this->assertNull($result);
     }
 
-    protected function setUp(): void
+    protected function onSetUp(): void
     {
-        parent::setUp();
-        $this->tagService = $this->container->get(TagService::class);
+        // 清理测试数据，确保测试隔离
+        self::getEntityManager()->createQuery('DELETE FROM Tourze\QuestionBankBundle\Entity\Tag t')->execute();
     }
 }

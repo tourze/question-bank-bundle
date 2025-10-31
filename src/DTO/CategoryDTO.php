@@ -30,7 +30,7 @@ class CategoryDTO
         $dto = new self();
         $dto->name = $name;
         $dto->code = $code;
-        
+
         return $dto;
     }
 }

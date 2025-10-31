@@ -22,7 +22,7 @@ class OptionDTO
         $dto = new self();
         $dto->content = $content;
         $dto->isCorrect = $isCorrect;
-        
+
         return $dto;
     }
 }

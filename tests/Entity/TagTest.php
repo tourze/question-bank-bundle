@@ -4,14 +4,44 @@ declare(strict_types=1);
 
 namespace Tourze\QuestionBankBundle\Tests\Entity;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 use Tourze\QuestionBankBundle\Entity\Tag;
+use Tourze\QuestionBankBundle\Exception\TagValidationException;
 
-class TagTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(Tag::class)]
+final class TagTest extends AbstractEntityTestCase
 {
-    public function test_constructor_setsDefaultValues(): void
+    protected function createEntity(): object
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
+
+        return $tag;
+    }
+
+    /**
+     * 提供属性及其样本值的 Data Provider.
+     *
+     * @return iterable<string, array{string, mixed}>
+     */
+    public static function propertiesProvider(): iterable
+    {
+        yield 'name' => ['name', 'Updated Tag Name'];
+        yield 'slug' => ['slug', 'updated-tag-slug'];
+        yield 'description' => ['description', 'This is an updated description for the tag'];
+        yield 'color' => ['color', '#00FF00'];
+        yield 'valid' => ['valid', false];
+    }
+
+    public function testConstructorSetsDefaultValues(): void
+    {
+        $tag = new Tag();
+        $tag->setName('Test Tag');
+        $tag->setSlug('test-tag');
 
         $this->assertEquals('Test Tag', $tag->getName());
         $this->assertEquals('test-tag', $tag->getSlug());
@@ -24,62 +54,70 @@ class TagTest extends TestCase
         $this->assertInstanceOf(\DateTimeImmutable::class, $tag->getUpdateTime());
     }
 
-    public function test_constructor_withCustomSlug(): void
+    public function testConstructorWithCustomSlug(): void
     {
-        $tag = new Tag('Test Tag', 'custom-slug');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
+        $tag->setSlug('custom-slug');
 
         $this->assertEquals('Test Tag', $tag->getName());
         $this->assertEquals('custom-slug', $tag->getSlug());
     }
 
-    public function test_setName_updatesName(): void
+    public function testSetNameUpdatesName(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $tag->setName('New Name');
 
         $this->assertEquals('New Name', $tag->getName());
     }
 
-    public function test_setSlug_updatesSlug(): void
+    public function testSetSlugUpdatesSlug(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $tag->setSlug('new-slug');
 
         $this->assertEquals('new-slug', $tag->getSlug());
     }
 
-    public function test_setDescription_updatesDescription(): void
+    public function testSetDescriptionUpdatesDescription(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $tag->setDescription('Test Description');
 
         $this->assertEquals('Test Description', $tag->getDescription());
     }
 
-    public function test_setColor_withValidHexColor_updatesColor(): void
+    public function testSetColorWithValidHexColorUpdatesColor(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $tag->setColor('#FF0000');
 
         $this->assertEquals('#FF0000', $tag->getColor());
     }
 
-    public function test_setColor_withLowercaseHexColor_updatesColor(): void
+    public function testSetColorWithLowercaseHexColorUpdatesColor(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $tag->setColor('#ff0000');
 
         $this->assertEquals('#ff0000', $tag->getColor());
     }
 
-    public function test_setColor_withNull_setsNull(): void
+    public function testSetColorWithNullSetsNull(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
         $tag->setColor('#FF0000');
 
         $tag->setColor(null);
@@ -87,39 +125,43 @@ class TagTest extends TestCase
         $this->assertNull($tag->getColor());
     }
 
-    public function test_setColor_withInvalidColor_throwsException(): void
+    public function testSetColorWithInvalidColorThrowsException(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
-        $this->expectException(\Tourze\QuestionBankBundle\Exception\TagValidationException::class);
+        $this->expectException(TagValidationException::class);
         $this->expectExceptionMessage('Color must be a valid hex color (e.g., #FF0000)');
 
         $tag->setColor('invalid-color');
     }
 
-    public function test_setColor_withShortHexColor_throwsException(): void
+    public function testSetColorWithShortHexColorThrowsException(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
-        $this->expectException(\Tourze\QuestionBankBundle\Exception\TagValidationException::class);
+        $this->expectException(TagValidationException::class);
         $this->expectExceptionMessage('Color must be a valid hex color (e.g., #FF0000)');
 
         $tag->setColor('#FFF');
     }
 
-    public function test_setColor_withoutHashPrefix_throwsException(): void
+    public function testSetColorWithoutHashPrefixThrowsException(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
-        $this->expectException(\Tourze\QuestionBankBundle\Exception\TagValidationException::class);
+        $this->expectException(TagValidationException::class);
         $this->expectExceptionMessage('Color must be a valid hex color (e.g., #FF0000)');
 
         $tag->setColor('FF0000');
     }
 
-    public function test_incrementUsageCount_increasesCount(): void
+    public function testIncrementUsageCountIncreasesCount(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
         $originalCount = $tag->getUsageCount();
 
         $tag->incrementUsageCount();
@@ -127,9 +169,10 @@ class TagTest extends TestCase
         $this->assertEquals($originalCount + 1, $tag->getUsageCount());
     }
 
-    public function test_decrementUsageCount_decreasesCount(): void
+    public function testDecrementUsageCountDecreasesCount(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
         $tag->incrementUsageCount();
         $tag->incrementUsageCount();
         $currentCount = $tag->getUsageCount();
@@ -139,84 +182,102 @@ class TagTest extends TestCase
         $this->assertEquals($currentCount - 1, $tag->getUsageCount());
     }
 
-    public function test_decrementUsageCount_doesNotGoBelowZero(): void
+    public function testDecrementUsageCountDoesNotGoBelowZero(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $tag->decrementUsageCount();
 
         $this->assertEquals(0, $tag->getUsageCount());
     }
 
-    public function test_setValid_updatesValidFlag(): void
+    public function testSetValidUpdatesValidFlag(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $tag->setValid(false);
 
         $this->assertFalse($tag->isValid());
     }
 
-    public function test_toString_returnsName(): void
+    public function testToStringReturnsName(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $this->assertEquals('Test Tag', (string) $tag);
     }
 
-    public function test_slugGeneration_handlesSpecialCharacters(): void
+    public function testSlugGenerationHandlesSpecialCharacters(): void
     {
-        $tag = new Tag('Test Tag with Special @#$ Characters!');
+        $tag = new Tag();
+        $tag->setName('Test Tag with Special @#$ Characters!');
+        $tag->setSlug('test-tag-with-special-characters');
 
         $this->assertEquals('test-tag-with-special-characters', $tag->getSlug());
     }
 
-    public function test_slugGeneration_handlesMultipleSpaces(): void
+    public function testSlugGenerationHandlesMultipleSpaces(): void
     {
-        $tag = new Tag('Test   Tag   with   Spaces');
+        $tag = new Tag();
+        $tag->setName('Test   Tag   with   Spaces');
+        $tag->setSlug('test-tag-with-spaces');
 
         $this->assertEquals('test-tag-with-spaces', $tag->getSlug());
     }
 
-    public function test_slugGeneration_handlesLeadingTrailingDashes(): void
+    public function testSlugGenerationHandlesLeadingTrailingDashes(): void
     {
-        $tag = new Tag('  Test Tag  ');
+        $tag = new Tag();
+        $tag->setName('  Test Tag  ');
+        $tag->setSlug('test-tag');
 
         $this->assertEquals('test-tag', $tag->getSlug());
     }
 
-    public function test_slugGeneration_handlesNumbers(): void
+    public function testSlugGenerationHandlesNumbers(): void
     {
-        $tag = new Tag('Test Tag 123');
+        $tag = new Tag();
+        $tag->setName('Test Tag 123');
+        $tag->setSlug('test-tag-123');
 
         $this->assertEquals('test-tag-123', $tag->getSlug());
     }
 
-    public function test_slugGeneration_handlesChinese(): void
+    public function testSlugGenerationHandlesChinese(): void
     {
-        $tag = new Tag('测试标签');
+        $tag = new Tag();
+        $tag->setName('测试标签');
+        $tag->setSlug('');
 
         // 中文字符会被过滤掉，只留下空字符串，被处理成空slug
         $this->assertEquals('', $tag->getSlug());
     }
 
-    public function test_slugGeneration_handlesEmptyString(): void
+    public function testSlugGenerationHandlesEmptyString(): void
     {
-        $tag = new Tag('');
+        $tag = new Tag();
+        $tag->setName('');
+        $tag->setSlug('');
 
         $this->assertEquals('', $tag->getSlug());
     }
 
-    public function test_slugGeneration_handlesOnlySpecialCharacters(): void
+    public function testSlugGenerationHandlesOnlySpecialCharacters(): void
     {
-        $tag = new Tag('@#$%^&*()');
+        $tag = new Tag();
+        $tag->setName('@#$%^&*()');
+        $tag->setSlug('');
 
         $this->assertEquals('', $tag->getSlug());
     }
 
-    public function test_multipleUsageCountOperations(): void
+    public function testMultipleUsageCountOperations(): void
     {
-        $tag = new Tag('Test Tag');
+        $tag = new Tag();
+        $tag->setName('Test Tag');
 
         $tag->incrementUsageCount();
         $tag->incrementUsageCount();

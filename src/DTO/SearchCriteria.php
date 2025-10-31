@@ -10,29 +10,32 @@ use Tourze\QuestionBankBundle\Enum\QuestionType;
 class SearchCriteria
 {
     private ?string $keyword = null;
-    
+
     /** @var array<QuestionType> */
     private array $types = [];
-    
+
     /** @var array<QuestionStatus> */
     private array $statuses = [];
-    
+
     private ?int $minDifficulty = null;
+
     private ?int $maxDifficulty = null;
-    
+
     /** @var array<string> */
     private array $categoryIds = [];
-    
+
     /** @var array<string> */
     private array $tagIds = [];
-    
+
     private bool $requireAllTags = false;
+
     private bool $includeArchived = false;
-    
+
     /** @var array<string, string> */
     private array $orderBy = ['createTime' => 'DESC'];
-    
+
     private int $page = 1;
+
     private int $limit = 20;
 
     public function getKeyword(): ?string
@@ -40,10 +43,9 @@ class SearchCriteria
         return $this->keyword;
     }
 
-    public function setKeyword(?string $keyword): self
+    public function setKeyword(?string $keyword): void
     {
         $this->keyword = $keyword;
-        return $this;
     }
 
     /**
@@ -57,10 +59,9 @@ class SearchCriteria
     /**
      * @param array<QuestionType> $types
      */
-    public function setTypes(array $types): self
+    public function setTypes(array $types): void
     {
         $this->types = $types;
-        return $this;
     }
 
     /**
@@ -74,10 +75,9 @@ class SearchCriteria
     /**
      * @param array<QuestionStatus> $statuses
      */
-    public function setStatuses(array $statuses): self
+    public function setStatuses(array $statuses): void
     {
         $this->statuses = $statuses;
-        return $this;
     }
 
     public function getMinDifficulty(): ?int
@@ -85,10 +85,9 @@ class SearchCriteria
         return $this->minDifficulty;
     }
 
-    public function setMinDifficulty(?int $minDifficulty): self
+    public function setMinDifficulty(?int $minDifficulty): void
     {
         $this->minDifficulty = $minDifficulty;
-        return $this;
     }
 
     public function getMaxDifficulty(): ?int
@@ -96,10 +95,9 @@ class SearchCriteria
         return $this->maxDifficulty;
     }
 
-    public function setMaxDifficulty(?int $maxDifficulty): self
+    public function setMaxDifficulty(?int $maxDifficulty): void
     {
         $this->maxDifficulty = $maxDifficulty;
-        return $this;
     }
 
     /**
@@ -113,10 +111,9 @@ class SearchCriteria
     /**
      * @param array<string> $categoryIds
      */
-    public function setCategoryIds(array $categoryIds): self
+    public function setCategoryIds(array $categoryIds): void
     {
         $this->categoryIds = $categoryIds;
-        return $this;
     }
 
     /**
@@ -130,10 +127,9 @@ class SearchCriteria
     /**
      * @param array<string> $tagIds
      */
-    public function setTagIds(array $tagIds): self
+    public function setTagIds(array $tagIds): void
     {
         $this->tagIds = $tagIds;
-        return $this;
     }
 
     public function requireAllTags(): bool
@@ -141,10 +137,9 @@ class SearchCriteria
         return $this->requireAllTags;
     }
 
-    public function setRequireAllTags(bool $requireAllTags): self
+    public function setRequireAllTags(bool $requireAllTags): void
     {
         $this->requireAllTags = $requireAllTags;
-        return $this;
     }
 
     public function includeArchived(): bool
@@ -152,10 +147,9 @@ class SearchCriteria
         return $this->includeArchived;
     }
 
-    public function setIncludeArchived(bool $includeArchived): self
+    public function setIncludeArchived(bool $includeArchived): void
     {
         $this->includeArchived = $includeArchived;
-        return $this;
     }
 
     /**
@@ -169,10 +163,9 @@ class SearchCriteria
     /**
      * @param array<string, string> $orderBy
      */
-    public function setOrderBy(array $orderBy): self
+    public function setOrderBy(array $orderBy): void
     {
         $this->orderBy = $orderBy;
-        return $this;
     }
 
     public function getPage(): int
@@ -180,10 +173,9 @@ class SearchCriteria
         return $this->page;
     }
 
-    public function setPage(int $page): self
+    public function setPage(int $page): void
     {
         $this->page = max(1, $page);
-        return $this;
     }
 
     public function getLimit(): int
@@ -191,9 +183,8 @@ class SearchCriteria
         return $this->limit;
     }
 
-    public function setLimit(int $limit): self
+    public function setLimit(int $limit): void
     {
         $this->limit = max(1, min(100, $limit));
-        return $this;
     }
 }
