@@ -13,6 +13,8 @@ use Tourze\QuestionBankBundle\Entity\Category;
 use Tourze\QuestionBankBundle\Repository\CategoryRepository;
 
 /**
+ * @extends AbstractRepositoryTestCase<Category>
+ *
  * @internal
  */
 #[CoversClass(CategoryRepository::class)]
@@ -40,7 +42,6 @@ final class CategoryRepositoryTest extends AbstractRepositoryTestCase
         $found = $this->getRepository()->find($category->getId());
 
         // Assert
-        $this->assertNotNull($found);
         $this->assertInstanceOf(Category::class, $found);
         $this->assertEquals($category->getId(), $found->getId());
     }

@@ -11,6 +11,8 @@ use Tourze\QuestionBankBundle\Entity\Tag;
 use Tourze\QuestionBankBundle\Repository\TagRepository;
 
 /**
+ * @extends AbstractRepositoryTestCase<Tag>
+ *
  * @internal
  */
 #[CoversClass(TagRepository::class)]

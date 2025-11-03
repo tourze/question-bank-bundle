@@ -82,8 +82,11 @@ class QuestionRepository extends ServiceEntityRepository
         $paginator = new Paginator($qb->getQuery());
         $paginator->setUseOutputWalkers(false);
 
+        $items = iterator_to_array($paginator);
+        /** @var array<int, Question> $items */
+
         return new PaginatedResult(
-            items: iterator_to_array($paginator),
+            items: $items,
             total: count($paginator),
             page: $criteria->getPage(),
             limit: $criteria->getLimit()
@@ -101,6 +104,8 @@ class QuestionRepository extends ServiceEntityRepository
             ->getQuery()
             ->getArrayResult()
         ;
+
+        /** @var list<array{type: \Tourze\QuestionBankBundle\Enum\QuestionType, count: string}> $result */
 
         $counts = [];
         foreach ($result as $row) {
@@ -120,6 +125,7 @@ class QuestionRepository extends ServiceEntityRepository
             return [];
         }
 
+        /** @var array<int, Question> */
         return $this->createQueryBuilder('q')
             ->andWhere('q.id IN (:ids)')
             ->setParameter('ids', $ids)
@@ -137,6 +143,7 @@ class QuestionRepository extends ServiceEntityRepository
 
         // 先获取所有符合条件的记录，然后在PHP中随机化
         $allResults = $qb->getQuery()->getResult();
+        /** @var array<int, Question> $allResults */
 
         // 如果结果数量少于或等于限制，直接返回
         if (count($allResults) <= $limit) {

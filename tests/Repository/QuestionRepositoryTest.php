@@ -18,6 +18,8 @@ use Tourze\QuestionBankBundle\Repository\QuestionRepository;
 use Tourze\QuestionBankBundle\ValueObject\Difficulty;
 
 /**
+ * @extends AbstractRepositoryTestCase<Question>
+ *
  * @internal
  */
 #[CoversClass(QuestionRepository::class)]
@@ -82,7 +84,6 @@ final class QuestionRepositoryTest extends AbstractRepositoryTestCase
         $this->assertNotNull($saved);
         $this->assertCount(2, $saved->getOptions());
         $firstOption = $saved->getOptions()->first();
-        $this->assertNotNull($firstOption);
         $this->assertInstanceOf(Option::class, $firstOption);
         $this->assertEquals('Option A', $firstOption->getContent());
         $this->assertTrue($firstOption->isCorrect());

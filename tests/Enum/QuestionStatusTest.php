@@ -141,21 +141,18 @@ final class QuestionStatusTest extends AbstractEnumTestCase
     {
         // toArray() 方法（来自 ItemTrait）返回当前实例的 value 和 label
         $draftArray = QuestionStatus::DRAFT->toArray();
-        $this->assertIsArray($draftArray);
         $this->assertArrayHasKey('value', $draftArray);
         $this->assertArrayHasKey('label', $draftArray);
         $this->assertEquals('draft', $draftArray['value']);
         $this->assertEquals('草稿', $draftArray['label']);
 
         $publishedArray = QuestionStatus::PUBLISHED->toArray();
-        $this->assertIsArray($publishedArray);
         $this->assertArrayHasKey('value', $publishedArray);
         $this->assertArrayHasKey('label', $publishedArray);
         $this->assertEquals('published', $publishedArray['value']);
         $this->assertEquals('已发布', $publishedArray['label']);
 
         $archivedArray = QuestionStatus::ARCHIVED->toArray();
-        $this->assertIsArray($archivedArray);
         $this->assertArrayHasKey('value', $archivedArray);
         $this->assertArrayHasKey('label', $archivedArray);
         $this->assertEquals('archived', $archivedArray['value']);
@@ -164,7 +161,6 @@ final class QuestionStatusTest extends AbstractEnumTestCase
         // 确保每个状态的 toArray() 都返回正确的数据
         foreach (QuestionStatus::cases() as $status) {
             $array = $status->toArray();
-            $this->assertIsArray($array);
             $this->assertCount(2, $array);
             $this->assertArrayHasKey('value', $array);
             $this->assertArrayHasKey('label', $array);

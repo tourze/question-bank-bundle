@@ -15,6 +15,8 @@ use Tourze\QuestionBankBundle\Repository\OptionRepository;
 use Tourze\QuestionBankBundle\ValueObject\Difficulty;
 
 /**
+ * @extends AbstractRepositoryTestCase<Option>
+ *
  * @internal
  */
 #[CoversClass(OptionRepository::class)]

@@ -66,14 +66,12 @@ final class QuestionTypeTest extends AbstractEnumTestCase
     {
         // toArray() 方法（来自 ItemTrait）返回当前实例的 value 和 label
         $singleChoiceArray = QuestionType::SINGLE_CHOICE->toArray();
-        $this->assertIsArray($singleChoiceArray);
         $this->assertArrayHasKey('value', $singleChoiceArray);
         $this->assertArrayHasKey('label', $singleChoiceArray);
         $this->assertEquals('single_choice', $singleChoiceArray['value']);
         $this->assertEquals('单选题', $singleChoiceArray['label']);
 
         $multipleChoiceArray = QuestionType::MULTIPLE_CHOICE->toArray();
-        $this->assertIsArray($multipleChoiceArray);
         $this->assertArrayHasKey('value', $multipleChoiceArray);
         $this->assertArrayHasKey('label', $multipleChoiceArray);
         $this->assertEquals('multiple_choice', $multipleChoiceArray['value']);
@@ -82,7 +80,6 @@ final class QuestionTypeTest extends AbstractEnumTestCase
         // 确保每个题型的 toArray() 都返回正确的数据
         foreach (QuestionType::cases() as $type) {
             $array = $type->toArray();
-            $this->assertIsArray($array);
             $this->assertCount(2, $array);
             $this->assertArrayHasKey('value', $array);
             $this->assertArrayHasKey('label', $array);

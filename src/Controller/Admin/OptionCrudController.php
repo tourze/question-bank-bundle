@@ -19,6 +19,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Tourze\QuestionBankBundle\Entity\Option;
 
+/**
+ * @extends AbstractCrudController<Option>
+ */
 #[AdminCrud(routePath: '/question-bank/option', routeName: 'question_bank_option')]
 final class OptionCrudController extends AbstractCrudController
 {

@@ -22,6 +22,7 @@ class TagRepository extends ServiceEntityRepository
 
     public function findBySlug(string $slug): ?Tag
     {
+        /** @var Tag|null */
         return $this->createQueryBuilder('t')
             ->andWhere('t.slug = :slug')
             ->setParameter('slug', $slug)
@@ -35,6 +36,7 @@ class TagRepository extends ServiceEntityRepository
      */
     public function findPopularTags(int $limit = 20): array
     {
+        /** @var array<int, Tag> */
         return $this->createQueryBuilder('t')
             ->orderBy('t.usageCount', 'DESC')
             ->setMaxResults($limit)
@@ -54,6 +56,7 @@ class TagRepository extends ServiceEntityRepository
             return [];
         }
 
+        /** @var array<int, Tag> */
         return $this->createQueryBuilder('t')
             ->andWhere('t.name IN (:names)')
             ->setParameter('names', $names)
@@ -69,6 +72,7 @@ class TagRepository extends ServiceEntityRepository
      */
     public function search(string $keyword, int $limit = 10): array
     {
+        /** @var array<int, Tag> */
         return $this->createQueryBuilder('t')
             ->andWhere('t.name LIKE :keyword OR t.slug LIKE :keyword')
             ->setParameter('keyword', '%' . $keyword . '%')

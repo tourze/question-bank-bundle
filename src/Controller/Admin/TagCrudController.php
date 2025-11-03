@@ -20,6 +20,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Tourze\QuestionBankBundle\Entity\Tag;
 
+/**
+ * @extends AbstractCrudController<Tag>
+ */
 #[AdminCrud(routePath: '/question-bank/tag', routeName: 'question_bank_tag')]
 final class TagCrudController extends AbstractCrudController
 {

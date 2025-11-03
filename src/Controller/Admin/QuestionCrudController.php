@@ -25,6 +25,9 @@ use Tourze\QuestionBankBundle\Entity\Question;
 use Tourze\QuestionBankBundle\Enum\QuestionStatus;
 use Tourze\QuestionBankBundle\Enum\QuestionType;
 
+/**
+ * @extends AbstractCrudController<Question>
+ */
 #[AdminCrud(routePath: '/question-bank/question', routeName: 'question_bank_question')]
 final class QuestionCrudController extends AbstractCrudController
 {
