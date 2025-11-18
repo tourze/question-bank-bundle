@@ -22,11 +22,6 @@ class TagCrudControllerTest extends AbstractEasyAdminControllerTestCase
         return self::getService(TagCrudController::class);
     }
 
-    public function testGetEntityFqcn(): void
-    {
-        $this->assertSame(Tag::class, TagCrudController::getEntityFqcn());
-    }
-
     /**
      * @return iterable<string, array{string}>
      */

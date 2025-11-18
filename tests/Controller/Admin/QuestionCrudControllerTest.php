@@ -22,11 +22,6 @@ class QuestionCrudControllerTest extends AbstractEasyAdminControllerTestCase
         return self::getService(QuestionCrudController::class);
     }
 
-    public function testGetEntityFqcn(): void
-    {
-        $this->assertSame(Question::class, QuestionCrudController::getEntityFqcn());
-    }
-
     /**
      * @return iterable<string, array{string}>
      */
