@@ -6,7 +6,7 @@ namespace Tourze\QuestionBankBundle\DependencyInjection;
 
 use Tourze\SymfonyDependencyServiceLoader\AutoExtension;
 
-class QuestionBankExtension extends AutoExtension
+final class QuestionBankExtension extends AutoExtension
 {
     protected function getConfigDir(): string
     {
